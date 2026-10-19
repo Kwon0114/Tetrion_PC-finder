@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tetrion PC Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#080a14;--line:#252b52;--ink:#e8ecff;--dim:#8790b8;--cy:#00e5ff;--mg:#ff2bd6;--mint:#39ff9a;--gold:#ffe14d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:600 15px/1.5 'Nunito',system-ui,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px 14px 40px}
+h1{font:800 26px 'Baloo 2',sans-serif;margin:0 0 2px;color:var(--cy);text-shadow:0 0 16px rgba(0,229,255,.5)}
+.sub{color:var(--dim);margin:0 0 16px;font-size:13px}
+section{background:var(--panel);box-shadow:0 0 0 1px rgba(0,229,255,.28),0 0 22px rgba(0,229,255,.1);padding:14px;margin-bottom:14px}
+h2{font:800 16px 'Baloo 2',sans-serif;margin:0 0 10px;color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+label{color:var(--dim);font-size:13px}
+input[type=text],select{background:#0c0f1e;border:1px solid var(--line);color:var(--ink);padding:8px 10px;font:inherit;border-radius:0;min-width:0}
+input[type=text]{flex:1;min-width:120px;letter-spacing:.12em;text-transform:uppercase}
+button{font:800 14px 'Baloo 2',sans-serif;background:#10142a;color:var(--ink);border:1px solid var(--line);padding:8px 14px;cursor:pointer;border-radius:0}
+@media(hover:hover){button:hover{border-color:var(--cy)}}
+button.go{background:var(--mg);border-color:var(--mg);color:#000;flex:1;font-size:16px}
+button.stop{background:transparent;border-color:var(--gold);color:var(--gold)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+canvas{display:block;margin:0 auto;background:#05060d;border:1px solid var(--line);touch-action:none;max-width:100%}
+#status{margin-top:10px;font-size:13px;color:var(--dim);min-height:20px}
+#status.ok{color:var(--mint)}#status.bad{color:var(--mg)}
+.sols{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.sol{text-align:left;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sol.on{border-color:var(--mint);box-shadow:0 0 12px rgba(57,255,154,.3)}
+.pc{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;font:800 12px 'Baloo 2';color:#000}
+.pc.h{outline:2px solid var(--gold)}
+.pc.s{text-decoration:underline;text-underline-offset:2px}
+#cap{text-align:center;margin-top:10px;font:800 15px 'Baloo 2'}
+.ctl{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.ctl button{min-width:64px}
+.hint{color:var(--dim);font-size:12px;margin-top:8px}
+#pal{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:8px;flex-wrap:wrap}
+#pal button.sw{width:26px;height:26px;min-width:26px;padding:0}
+#pal button.sw.on{outline:2px solid var(--gold);outline-offset:2px}
+button.ib{width:20px;height:20px;min-width:20px;padding:0;border-radius:50%;margin-left:6px;vertical-align:middle;background:transparent;color:var(--cy);border-color:var(--cy);font:italic 700 12px/18px Georgia,serif}
+.lo{margin:0 0 12px}.lo h3{font:800 14px 'Baloo 2',sans-serif;margin:0 0 6px}.lo .m{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px}.lo .ls{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.lo .ls div{display:flex;gap:8px;align-items:center}.lo button.sv{display:flex;gap:6px;align-items:center;text-align:left;padding:3px 8px;font:inherit;font-weight:800}.lo .ls button.sv{gap:8px}.lo button.sv{-webkit-tap-highlight-color:transparent}.lo button.sv.on{border-color:var(--mint);background:rgba(57,255,154,.16);box-shadow:0 0 12px rgba(57,255,154,.3)}.lo button.sv.on::after{content:'✓';color:var(--mint);margin-left:auto;padding-left:8px}
+</style>
+</head>
+<body>
+<main>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+<h1>PC Finder</h1>
+<button id="lang" style="font:800 12px 'Baloo 2',sans-serif;background:#10142a;color:var(--ink);border:1px solid var(--line);padding:5px 10px;cursor:pointer;border-radius:0">EN</button>
+</div>
+<p class="sub" id="subp">Tetrion의 SRS 회전·킥 규칙(180° 포함)으로 퍼펙트 클리어를 찾습니다.</p>
+
+<section>
+<h2 id="h2board">보드</h2>
+<canvas id="ed"></canvas>
+<div id="pal" role="group" aria-label="색칠"></div>
+<div class="hint" id="hint6" style="display:none;color:var(--gold)">퍼클 탐색은 아래쪽 8줄까지만 지원합니다. 9줄 이상 쌓인 보드는 8줄 안에서 끝나는 해만 찾아요.</div>
+<div class="hint" id="hintDrag">칸을 누르거나 드래그해서 블록을 채우고 지웁니다. 맨 아래가 바닥입니다.</div>
+<div class="row">
+<label for="hh" id="lblHeight">높이</label><button id="hm" aria-label="높이 줄이기">−</button><input id="hh" type="number" min="2" max="12" value="4" inputmode="numeric" style="width:56px;background:#0c0f1e;border:1px solid var(--line);color:var(--ink);padding:8px 6px;font:inherit;text-align:center"><button id="hp" aria-label="높이 늘리기">+</button>
+<button id="clr">비우기</button>
+</div>
+<div class="row"><input id="fmin" type="text" spellcheck="false" autocomplete="off" placeholder="후멘 코드 붙여넣기 (v115@…)" style="flex:1;min-width:0;background:#0c0f1e;border:1px solid var(--line);color:var(--ink);padding:8px 10px;font:inherit"><button id="fmload">가져오기</button></div>
+</section>
+
+<section>
+<h2 id="h2piece">피스</h2>
+<div class="row"><label for="q" id="lblNext">넥스트</label><input id="q" type="text" spellcheck="false" autocomplete="off"><button id="rnd">랜덤 2백</button><button type="button" class="ib" data-t="hintBracket" aria-label="입력 문법 설명">i</button></div>
+<div class="hint" id="hintBracket" style="display:none">[ ] 묶음 · 안은 띄어 써도 됨 · 중첩 가능<br>숫자 = 뽑을 개수(생략 시 1개, 쓴 순서 유지)<br>! = 섞기(개수 생략 시 전부)<br><br>[TIL] T·I·L 중 1개<br>[TIL]2 TI·TL·IL 중 하나<br>[TIL]! 3개 전부 섞어서<br>[TIL]2! 2개를 섞어서<br><br>[]! = [IOTSZJL]! → 기본으로 7-bag 지정<br>% = bag 여부 뒤집기 (일반 묶음에 붙이면 bag 지정, []에 붙이면 해제)<br>※ 세이브는 bag으로 지정된 묶음 기준으로 계산돼요 (해제하면 계산 안 함)<br><br>예: [TIL]!JSZ<br>예: [[SZ]! [LJ]!]2!</div>
+<div class="row">
+<label><input type="checkbox" id="uh" checked> <span id="lblUseHold">홀드 사용</span></label>
+<label><input type="checkbox" id="u180"> <span id="lblRot180">180° 회전</span></label>
+<label><input type="checkbox" id="usp" checked> <span id="lblSpin">스핀·틱 포함</span></label>
+<label><input type="checkbox" id="po"> <span id="lblProbOnly">확률만 (빠름)</span></label>
+<label title="첫 피스별로 나눠 여러 스레드로 탐색합니다 (첫 피스가 여러 가지일 때만)"><input type="checkbox" id="par"> <span id="lblPar">병렬 처리</span></label>
+<label title="모든 해를 찾되, 최소 해법·실패 큐·남는 미노 통계는 계산하지 않습니다"><input type="checkbox" id="so"> <span id="lblSolOnly">해법만 (빠름)</span></label>
+</div>
+<div class="row"><label for="see">See</label><input id="see" type="number" min="0" max="15" placeholder="전체" inputmode="numeric" style="width:64px;background:#0c0f1e;border:1px solid var(--line);color:var(--ink);padding:8px 6px;font:inherit;text-align:center"><span class="hint" id="hintSee" style="margin:0"></span></div>
+<div class="row"><button class="go" id="go">퍼펙트 클리어 찾기</button><button class="stop" id="stop" style="display:none">중지</button></div>
+<div id="status"></div>
+<div id="fq2" class="lo" style="display:none"></div>
+</section>
+
+<section id="res" style="display:none">
+<h2 id="h2result">결과</h2>
+<div class="row" style="margin:0 0 10px"><button id="mn" class="stop" style="display:none"></button><button id="mnx" style="display:none"></button><button id="fm">후멘 복사</button></div>
+<textarea id="fmbox" readonly rows="3" style="display:none;width:100%;margin:0 0 10px;background:#0c0f1e;border:1px solid var(--line);color:var(--ink);font:12px monospace;padding:6px;box-sizing:border-box"></textarea>
+<div class="hint" id="mnh" style="margin:-4px 0 10px"></div>
+<div id="lo" class="lo" style="display:none"></div>
+<div id="fq" class="lo" style="display:none"></div>
+<div class="sols" id="sols"></div>
+<canvas id="vw"></canvas>
+<div id="cap"></div>
+<div class="ctl"><button id="pv">◀</button><button id="pl">재생</button><button id="nx">▶</button></div>
+</section>
+</main>
+
+<script id="app">
+(function(){
+"use strict";
+//ENGINE_START
+const COLS=10, BUF=4, CELL=26, MAXL=8;
+  const COLORS = {
+    I: '#68d7cd', O: '#f6d975', T: '#c995fc', S: '#8ddd9f',
+    Z: '#ff8080', J: '#729df1', L: '#ffb26a', G: '#5a6472'
+  };
+  const SHAPES = {
+    I: { size:4, states:[
+      [[0,1],[1,1],[2,1],[3,1]], [[2,0],[2,1],[2,2],[2,3]],
+      [[0,2],[1,2],[2,2],[3,2]], [[1,0],[1,1],[1,2],[1,3]] ] },
+    O: { size:4, states:[
+      [[1,0],[2,0],[1,1],[2,1]], [[1,0],[2,0],[1,1],[2,1]],
+      [[1,0],[2,0],[1,1],[2,1]], [[1,0],[2,0],[1,1],[2,1]] ] },
+    T: { size:3, states:[
+      [[1,0],[0,1],[1,1],[2,1]], [[1,0],[1,1],[2,1],[1,2]],
+      [[0,1],[1,1],[2,1],[1,2]], [[1,0],[0,1],[1,1],[1,2]] ] },
+    S: { size:3, states:[
+      [[1,0],[2,0],[0,1],[1,1]], [[1,0],[1,1],[2,1],[2,2]],
+      [[1,1],[2,1],[0,2],[1,2]], [[0,0],[0,1],[1,1],[1,2]] ] },
+    Z: { size:3, states:[
+      [[0,0],[1,0],[1,1],[2,1]], [[2,0],[1,1],[2,1],[1,2]],
+      [[0,1],[1,1],[1,2],[2,2]], [[1,0],[0,1],[1,1],[0,2]] ] },
+    J: { size:3, states:[
+      [[0,0],[0,1],[1,1],[2,1]], [[1,0],[2,0],[1,1],[1,2]],
+      [[0,1],[1,1],[2,1],[2,2]], [[1,0],[1,1],[0,2],[1,2]] ] },
+    L: { size:3, states:[
+      [[2,0],[0,1],[1,1],[2,1]], [[1,0],[1,1],[1,2],[2,2]],
+      [[0,1],[1,1],[2,1],[0,2]], [[0,0],[1,0],[1,1],[1,2]] ] }
+  };
+  const KICKS_JLSTZ = {
+    "0>1": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+    "1>0": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+    "1>2": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+    "2>1": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+    "2>3": [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+    "3>2": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+    "3>0": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+    "0>3": [[0,0],[1,0],[1,-1],[0,2],[1,2]]
+  };
+  // TETR.IO SRS+ uses a symmetric I-piece 90-degree kick table rather than
+  // the asymmetric Guideline SRS I table.
+  const KICKS_I = {
+    "0>1": [[0,0],[1,0],[-2,0],[-2,1],[1,-2]],
+    "1>2": [[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+    "2>3": [[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+    "3>0": [[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+    "0>3": [[0,0],[-1,0],[2,0],[2,1],[-1,-2]],
+    "1>0": [[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+    "2>1": [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+    "3>2": [[0,0],[1,0],[-2,0],[1,-2],[-2,1]]
+  };
+  // TETR.IO's default SRS+ adds direction-dependent 180-degree kicks instead
+  // of one generic table: JLSTZ get six tests per facing, I gets two, and O
+  // never meaningfully rotates.
+  const KICKS_180_JLSTZ = {
+    0: [[0,0],[0,-1],[1,-1],[-1,-1],[1,0],[-1,0]],
+    1: [[0,0],[1,0],[1,-2],[1,-1],[0,-2],[0,-1]],
+    2: [[0,0],[0,1],[-1,1],[1,1],[-1,0],[1,0]],
+    3: [[0,0],[-1,0],[-1,-2],[-1,-1],[0,-2],[0,-1]]
+  };
+  const KICKS_180_I = {
+    0: [[0,0],[0,-1]],
+    1: [[0,0],[1,0]],
+    2: [[0,0],[0,1]],
+    3: [[0,0],[-1,0]]
+  };
+  const KICK_KEYS = ['0>0','0>1','0>2','0>3','1>0','1>1','1>2','1>3','2>0','2>1','2>2','2>3','3>0','3>1','3>2','3>3'];
+  function getKicks(type, from, to){
+    if (type === 'O') return [[0,0]];
+    const table = type === 'I' ? KICKS_I : KICKS_JLSTZ;
+    return table[KICK_KEYS[from*4+to]] || [[0,0]];
+  }
+  // 180-degree kicks are keyed by the piece's facing before the turn (not by
+  // a from>to pair — TETR.IO's table is direction-dependent, not symmetric).
+  function get180Kicks(type, from){
+    if (type === 'O') return [[0,0]];
+    const table = type === 'I' ? KICKS_180_I : KICKS_180_JLSTZ;
+    return table[from] || [[0,0]];
+  }
+
+//LOGIC_START
+const D90=[1,3],D180=[1,3,2],MAXB=16;
+// Per piece/rotation: row masks (so a collision test is a few ANDs) + column bounds
+const PM={};
+for(const t of Object.keys(SHAPES)) PM[t]=SHAPES[t].states.map(cs=>{
+  const m={};let lo=9,hi=0,y0=9;
+  for(const [cx,cy] of cs){m[cy]=(m[cy]||0)|(1<<cx);lo=Math.min(lo,cx);hi=Math.max(hi,cx);y0=Math.min(y0,cy);}
+  const g=[];for(const k in m)g.push(+k,m[k]);
+  // numeric id parts: bounding-box origin (lo,y0) + packed sorted cell offsets (no strings/arrays in the hot paths)
+  const offs=cs.map(([cx,cy])=>(cy-y0)*10+(cx-lo)).sort((a,b)=>a-b);
+  const sig=((offs[0]*128+offs[1])*128+offs[2])*128+offs[3];
+  return {g,lo,hi,y0,sig};
+});
+const SIGM=268435456;   // 128^4: a placement id = (top*10+left)*SIGM + sig
+let _mx=0,_my=0;
+// Packed shape signature of 4 cells [[x,y],..] (sorted offsets from the bounding-box origin); leaves the origin in _mx/_my.
+function sigOf(cs){
+  let mx=99,my=99;
+  for(let i=0;i<4;i++){const c=cs[i];if(c[0]<mx)mx=c[0];if(c[1]<my)my=c[1];}
+  let a=(cs[0][1]-my)*10+cs[0][0]-mx,b=(cs[1][1]-my)*10+cs[1][0]-mx,c=(cs[2][1]-my)*10+cs[2][0]-mx,d=(cs[3][1]-my)*10+cs[3][0]-mx,t;
+  if(a>b){t=a;a=b;b=t;} if(c>d){t=c;c=d;d=t;} if(a>c){t=a;a=c;c=t;} if(b>d){t=b;b=d;d=t;} if(b>c){t=b;b=c;c=t;}
+  _mx=mx;_my=my;
+  return ((a*128+b)*128+c)*128+d;
+}
+const cellsId=cs=>{const q=sigOf(cs);return (_my*10+_mx)*SIGM+q;};
+const fits=(rows,t,r,x,y,B)=>{
+  const P=PM[t][r];
+  if(x+P.lo<0||x+P.hi>=COLS) return false;
+  const g=P.g;
+  for(let i=0;i<g.length;i+=2){
+    const Y=y+g[i];
+    if(Y<0||Y>=B) return false;
+    if(rows[Y]&(x>=0?g[i+1]<<x:g[i+1]>>-x)) return false;
+  }
+  return true;
+};
+// Every lock position reachable via move / soft drop / rotate (SRS kicks), as placement ids (see cellsId).
+// Bit-parallel: for every (rotation, row y) one mask holds all columns at once (bit b = column x+3).
+//   valid[r][y]  columns where the piece fits at row y (4 shifted ANDs of the board rows)
+//   reach[r][y]  columns the piece can reach at row y
+// Soft drop is one AND with the next row's valid mask, sliding is a shift-and-AND flood, and a rotation tries the kicks in order on all columns
+// at once (a column that already found a kick is done). Above the stack the piece moves freely, so rows y <= free only drop (as before).
+const XO=3, XM=0x1FFF, SCN=4*(MAXB+2);
+const INB={};for(const t of Object.keys(SHAPES)) INB[t]=PM[t].map(P=>{let m=0;for(let x=-P.lo;x+P.hi<COLS;x++) m|=1<<(x+XO);return m;});
+// kick lists per (piece, 180 on/off): KK[t][u180][d*4+r] = flat [kx,ky,kx,ky,...]
+const KK={};for(const t of Object.keys(SHAPES)){KK[t]=[0,1].map(u=>{const a=[];for(const d of (u?D180:D90)) for(let r=0;r<4;r++){const ks=t==='O'?[[0,0]]:(d===2?get180Kicks(t,r):getKicks(t,r,(r+d)%4));a[d*4+r]=ks.flat();}return a;});}
+const S_VALID=new Int32Array(SCN),S_REACH=new Int32Array(SCN),S_V=new Int32Array(SCN),S_DIRTY=new Uint8Array(SCN),S_STK=new Int32Array(SCN*2+8);
+function placementIds(rows,t,u180,B,spin){
+  const W=B+2,N=4*W,cs=SHAPES[t].states,PMt=PM[t],inb=INB[t],kk=KK[t][u180?1:0];
+  const valid=S_VALID,reach=S_REACH,V=S_V,dirty=S_DIRTY,stk=S_STK;
+  reach.fill(0,0,N);dirty.fill(0,0,N);
+  for(let r=0;r<4;r++){
+    const c=cs[r],base=r*W;
+    for(let y=0;y<B;y++){
+      let bad=0,ok=true;
+      for(let k=0;k<4;k++){const Y=y+c[k][1];if(Y<0||Y>=B){ok=false;break;}bad|=(rows[Y]<<XO)>>c[k][0];}
+      valid[base+y]=ok?(inb[r]&~bad&XM):0;
+    }
+    valid[base+B]=0;valid[base+B+1]=0;
+  }
+  let top=B;for(let i=0;i<B;i++) if(rows[i]){top=i;break;}
+  const free=top-5;
+  const out=[];
+  let sp=0;
+  // straight drops (rotate / shift above the stack, then drop): same ids, no free limit
+  for(let r=0;r<4;r++){
+    const P=PMt[r],base=r*W;let v=valid[base];reach[base]=v;V[base]=v;
+    for(let y=0;y<B;y++){
+      if(y>0){v=V[base+y-1]&valid[base+y];V[base+y]=v;}
+      const lk=v&~valid[base+y+1];
+      if(lk&&y+P.y0>=BUF) for(let b=0;b<13;b++) if((lk>>b)&1) out.push(((y+P.y0)*10+(b-XO+P.lo))*SIGM+P.sig);
+    }
+    dirty[base]=1;stk[sp++]=r;stk[sp++]=0;
+  }
+  if(spin===false) return out;
+  const nd=u180?3:2;
+  while(sp>0){
+    const y=stk[--sp],r=stk[--sp],i=r*W+y;dirty[i]=0;
+    let m=reach[i];
+    if(y+1<B){const a=m&valid[i+1],j=i+1;if(a&&(reach[j]|a)!==reach[j]){reach[j]|=a;if(!dirty[j]){dirty[j]=1;stk[sp++]=r;stk[sp++]=y+1;}}}
+    if(y<=free) continue;
+    const vv=valid[i];
+    for(;;){const n2=(m|(m<<1)|(m>>1))&vv;if(n2===m) break;m=n2;}
+    reach[i]=m;
+    if(y+1<B){const a=m&valid[i+1],j=i+1;if(a&&(reach[j]|a)!==reach[j]){reach[j]|=a;if(!dirty[j]){dirty[j]=1;stk[sp++]=r;stk[sp++]=y+1;}}}
+    const P=PMt[r];
+    if(y+P.y0>=BUF){
+      const lk=m&~valid[i+1];
+      if(lk) for(let b=0;b<13;b++) if((lk>>b)&1) out.push(((y+P.y0)*10+(b-XO+P.lo))*SIGM+P.sig);
+    }
+    for(let di=0;di<nd;di++){
+      const d=u180?(di===2?2:(di===0?1:3)):(di===0?1:3);
+      const nr=(r+d)%4,ks=kk[d*4+r];let done=0;
+      for(let q=0;q<ks.length;q+=2){
+        const kx=ks[q],Y=y+ks[q+1];if(Y<0||Y>=B) continue;
+        const tv=valid[nr*W+Y];
+        const src=m&~done&(kx>=0?tv>>kx:(tv<<-kx)&XM);
+        if(!src) continue;
+        done|=src;
+        const dst=kx>=0?(src<<kx):(src>>-kx),j=nr*W+Y;
+        if((reach[j]|dst)!==reach[j]){reach[j]|=dst;if(!dirty[j]){dirty[j]=1;stk[sp++]=nr;stk[sp++]=Y;}}
+      }
+    }
+  }
+  return out;
+}
+const popc=v=>{let c=0;while(v){c+=v&1;v>>=1;}return c;};
+const POP=new Uint8Array(1024);for(let i=1;i<1024;i++) POP[i]=POP[i>>1]+(i&1);
+const CR=new Uint8Array(64), CB=new Int32Array(64);   // cell index -> row / column bit
+for(let i=0;i<64;i++){CR[i]=(i/COLS)|0;CB[i]=1<<(i%COLS);}
+
+const TYPES='IOTSZJL';
+// A piece as it sits on the (already cleared) board, ignoring where it is: used to reject pieces whose rows are not adjacent yet
+const SHKN={};for(const t of TYPES) SHKN[t]=new Set(SHAPES[t].states.map(sigOf));
+const TIDX={I:0,O:1,T:2,S:3,Z:4,J:5,L:6};
+function tState(T,S,ctx){
+  let st=T.st.get(S);if(st) return st;
+  const {rows0,B}=ctx, rows=rows0.slice();
+  for(let i=0;i<T.p.length;i++) if((S>>i)&1) for(const [x,id] of T.p[i].cells) rows[id+BUF]|=1<<x;
+  const pos=new Int16Array(B).fill(-1), kept=[];
+  for(let r=0;r<B;r++) if(rows[r]!==1023) kept.push(r);
+  const c=B-kept.length;
+  kept.forEach((r,j)=>{pos[r]=c+j;});
+  st={rows:Array(c).fill(0).concat(kept.map(r=>rows[r])),pos};
+  T.st.set(S,st);return st;
+}
+function isHard(rows,cs,B){
+  // 1) nothing filled above the piece in any of its columns (it can drop straight in)
+  for(let i=0;i<4;i++){
+    const x=cs[i][0],y=cs[i][1];
+    let isTop=true;
+    for(let j=0;j<4;j++) if(cs[j][0]===x&&cs[j][1]<y){isTop=false;break;}
+    if(isTop) for(let yy=0;yy<y;yy++) if((rows[yy]>>x)&1) return false;
+  }
+  // 2) it rests on the floor or on a filled cell that is not its own
+  for(let i=0;i<4;i++){
+    const x=cs[i][0],y=cs[i][1];
+    if(y+1>=B) return true;
+    if((rows[y+1]>>x)&1){
+      let own=false;
+      for(let j=0;j<4;j++) if(cs[j][0]===x&&cs[j][1]===y+1){own=true;break;}
+      if(!own) return true;
+    }
+  }
+  return false;
+}
+// reachable lock positions per (stack, piece, 180 setting); survives between runs. Numeric keys only:
+// Map<bottom 3 rows, Map<next 3 rows * 256 + (B, piece, 180 flag), Set<placement id>>>
+// (the board is at most 6 rows high and everything above is empty, so the bottom 6 rows identify a stack)
+const PKCACHE=new Map();let pkN=0;
+function canPlace(ctx,st,t,cs){
+  const rows=st.rows,B=ctx.B;
+  if(isHard(rows,cs,B)) return true;
+  if(!ctx.spin) return false;
+  if(st.ka===undefined){
+    st.ka=rows[B-1]+rows[B-2]*1024+rows[B-3]*1048576;
+    st.kb=rows[B-4]+rows[B-5]*1024+rows[B-6]*1048576;
+  }
+  let bt=st.kb*256+(B*7+TIDX[t])*2+(ctx.u180?1:0);
+  if(B>6) bt=bt+'|'+(rows[B-7]||0)*1024+(rows[B-8]||0);   // a stack can be up to 8 rows high
+  let m=PKCACHE.get(st.ka),s=m&&m.get(bt);
+  if(!s){
+    if(pkN>=30000){PKCACHE.clear();pkN=0;m=undefined;}
+    s=new Set(placementIds(rows,t,ctx.u180,B));
+    if(!m){m=new Map();PKCACHE.set(st.ka,m);}
+    m.set(bt,s);pkN++;
+  }
+  return s.has(cellsId(cs));
+}
+function reachMask(T,S,ctx){
+  let m=T.rm.get(S);if(m!==undefined) return m;
+  const st=tState(T,S,ctx);m=0;
+  for(let i=0;i<T.p.length;i++){
+    if((S>>i)&1) continue;
+    const p=T.p[i];
+    const cs=p.cells.map(([x,id])=>[x,st.pos[id+BUF]]);
+    if(cs.every(c=>c[1]>=BUF)&&SHKN[p.t].has(sigOf(cs))&&canPlace(ctx,st,p.t,cs)) m|=1<<i;
+  }
+  T.rm.set(S,m);return m;
+}
+function seqPath(T,queue,hold0,useHold,ctx){
+  const n=T.p.length,full=(1<<n)-1,dead=new Set();
+  const hid=h=>h?TYPES.indexOf(h)+1:0;
+  function go(S,qi,hold,path){
+    if(S===full) return path;
+    const key=(S*16+qi)*8+hid(hold);
+    if(dead.has(key)) return null;
+    const cur=queue[qi];
+    if(cur!==undefined){
+      const m=reachMask(T,S,ctx);
+      const tryP=(t,nq,nh,used)=>{
+        for(let i=0;i<n;i++) if(!((S>>i)&1)&&((m>>i)&1)&&T.p[i].t===t){
+          const r=go(S|(1<<i),nq,nh,path.concat([[i,used]]));
+          if(r) return r;
+        }
+        return null;
+      };
+      let r=tryP(cur,qi+1,hold,false);
+      if(!r&&useHold&&hold!==cur){
+        if(hold) r=tryP(hold,qi+1,cur,true);
+        else if(qi+1<queue.length) r=tryP(queue[qi+1],qi+2,cur,true);
+      }
+      if(r) return r;
+    } else if(useHold&&hold){
+      // queue exhausted: in a real game the next piece still spawns, so the held piece can be swapped in for the final placement
+      const m=reachMask(T,S,ctx);
+      for(let i=0;i<n;i++) if(!((S>>i)&1)&&((m>>i)&1)&&T.p[i].t===hold){
+        const r=go(S|(1<<i),qi,null,path.concat([[i,true]]));
+        if(r) return r;
+      }
+    }
+    dead.add(key);return null;
+  }
+  return go(0,0,hold0||null,[]);
+}
+function buildSteps(T,path,ctx){
+  let S=0;const steps=[];
+  for(const [i,used] of path){
+    const st=tState(T,S,ctx);
+    const cs=T.p[i].cells.map(([x,id])=>[x,st.pos[id+BUF]]);
+    const ghost=[];
+    for(let j=0;j<T.p.length;j++) if(j!==i&&!((S>>j)&1)) ghost.push({t:T.p[j].t,cs:T.p[j].cells.map(([x,id])=>[x,st.pos[id+BUF]])});
+    steps.push({t:T.p[i].t,cs,used,ghost,before:st.rows,spin:!isHard(st.rows,cs,ctx.B)});
+    S|=1<<i;
+  }
+  return steps;
+}
+// ================= scan / cull / place =================
+// Boards are searched like the gomen solver:
+//   1. scan  : place one piece at a time from the start board, stage by stage.  A board knows the queue states (bag contents + hold) it can
+//              be reached with and the boards it came from.  Boards are the board AFTER line clears, so equal boards merge.
+//   2. cull  : walk back from the final (empty) board and keep only boards that lead to a perfect clear.
+//   3. place : scan again over the kept boards only, this time remembering which pieces were placed (in the unrolled picture: a piece placed
+//              after a line clear may be split by the cleared rows).  Every surviving piece set is one solution.
+// The queue then only has to be checked against the solutions: for each solution every placement order that is playable (spins/tucks, line
+// clears) is collected; a queue works when some order of some solution can be played from it with hold.
+let RUNID=0;
+const MAX_CASES=Infinity;   // no limit on queue cases
+const MAX_BOARDS=Infinity;   // no limit on boards per stage (memory is the only limit)
+const MAX_BAG=13;
+
+class BagM{
+  constructor(letters,count){
+    this.count=count;this.full=(1<<letters.length)-1;this.masks=new Int32Array(7);
+    for(let i=0;i<letters.length;i++) this.masks[TIDX[letters[i]]]|=1<<i;
+  }
+}
+// queue state = 13 bits (pieces of the current bag not drawn yet) + 3 bits (piece in the hold slot)
+const qTake=(q,bag,s)=>{const f=q&bag.masks[s];return f?q^(f&-f):-1;};
+const qSwap=(q,bag,s)=>{const t=qTake(q,bag,s);return t<0?-1:((t&0x1FFF)|(s<<13));};
+// the piece drawn at this stage is either placed (the hold slot keeps its piece) or swapped with the hold slot.
+// Without hold the slot just delays the queue by one piece, so only the swap is allowed.
+// cache: per-stage Map (q*8+shape -> resulting states); a queue state's result never depends on the board, so it is computed once per stage
+function bagTake(qs,bag,shape,isFirst,canHold,cache){
+  const out=new Set();
+  for(let q of qs){
+    const ck=q*8+shape;let r=cache&&cache.get(ck);
+    if(!r){
+      r=[];let q0=q;
+      if(isFirst) q0=(q0&0xE000)|bag.full;
+      if((q0>>13)===shape){
+        for(let s=0;s<7;s++){if(!bag.masks[s]) continue;const t=qSwap(q0,bag,s);if(t>=0) r.push(t);}
+      } else if(canHold){const t=qTake(q0,bag,shape);if(t>=0) r.push(t);}
+      if(cache) cache.set(ck,r);
+    }
+    for(let i=0;i<r.length;i++) out.add(r[i]);
+  }
+  return out;
+}
+// ---- compact board store ----------------------------------------------------------------------------------------------------------
+// A board is the H rows of the playfield, 10 bits each, packed 5 rows to a number (exact in a double): K1 = rows 0-4, K2 = rows 5-9, K3 = rows 10-11.
+// keyOf returns K1 and leaves K2/K3 in the module variables.
+let K2=0,K3=0;
+function boardKeyFn(H){
+  return r=>{let a=0,b=0,c=0;for(let i=0;i<H;i++){const v=r[BUF+i];if(i<5)a=a*1024+v;else if(i<10)b=b*1024+v;else c=c*1024+v;}K2=b;K3=c;return a;};
+}
+const P1024=[1,1024,1048576,1073741824,1099511627776];
+function unpackRows(k1,k2,k3,H,out){
+  for(let i=0;i<BUF;i++) out[i]=0;
+  for(let i=0;i<H;i++){
+    const g=(i/5)|0,j=i-g*5,gs=Math.min(5,H-g*5),V=g===0?k1:g===1?k2:k3;
+    out[BUF+i]=Math.floor(V/P1024[gs-1-j])%1024;
+  }
+  return out;
+}
+// All boards of one scan step live in typed arrays (about 40 bytes per board instead of several hundred for objects + Sets):
+//   board table (open addressing) -> index; per board: key, cleared-line count, alive flag, queue states (linked list in a pool), predecessor edges (linked list).
+class Stage{
+  constructor(H){
+    this.h2=H>5;this.h3=H>10;this.n=0;this.cap=256;this.isNew=false;
+    this.k1=new Float64Array(256);this.k2=this.h2?new Float64Array(256):null;this.k3=this.h3?new Int32Array(256):null;
+    this.cnt=new Uint8Array(256);this.alive=new Uint8Array(256);
+    this.qh=new Int32Array(256).fill(-1);this.eh=new Int32Array(256).fill(-1);
+    this.tsz=512;this.tab=new Int32Array(512);
+    this.qv=new Uint16Array(1024);this.qn=new Int32Array(1024);this.qc=0;
+    this.ef=new Int32Array(1024);this.en=new Int32Array(1024);this.ec=0;
+  }
+  hash(a,b,c){
+    let h=Math.imul(a>>>0,0x9E3779B1)^Math.imul((a/4294967296)>>>0,0x85EBCA6B);
+    if(b) h^=Math.imul(b>>>0,0xC2B2AE35)^Math.imul((b/4294967296)>>>0,0x27D4EB2F);
+    if(c) h^=Math.imul(c,0x165667B1);
+    h^=h>>>15;h=Math.imul(h,0x2C1B3C6D);h^=h>>>12;return h;
+  }
+  same(i,a,b,c){return this.k1[i]===a&&(!this.h2||this.k2[i]===b)&&(!this.h3||this.k3[i]===c);}
+  find(a,b,c){
+    const m=this.tsz-1;let s=this.hash(a,b,c)&m;
+    for(;;s=(s+1)&m){const t=this.tab[s];if(!t) return -1;if(this.same(t-1,a,b,c)) return t-1;}
+  }
+  findOrAdd(a,b,c,cn){
+    if((this.n+1)*2>this.tsz) this.rehash();
+    const m=this.tsz-1;let s=this.hash(a,b,c)&m;
+    for(;;s=(s+1)&m){const t=this.tab[s];if(!t) break;if(this.same(t-1,a,b,c)){this.isNew=false;return t-1;}}
+    if(this.n===this.cap) this.growNodes();
+    const i=this.n++;this.tab[s]=i+1;this.k1[i]=a;if(this.h2) this.k2[i]=b;if(this.h3) this.k3[i]=c;this.cnt[i]=cn;
+    this.isNew=true;return i;
+  }
+  rehash(){
+    this.tsz*=2;this.tab=new Int32Array(this.tsz);const m=this.tsz-1;
+    for(let i=0;i<this.n;i++){let s=this.hash(this.k1[i],this.h2?this.k2[i]:0,this.h3?this.k3[i]:0)&m;while(this.tab[s]) s=(s+1)&m;this.tab[s]=i+1;}
+  }
+  growNodes(){
+    const nc=this.cap*2,gr=(A,C)=>{const B=new C(nc);B.set(A);return B;};
+    this.k1=gr(this.k1,Float64Array);if(this.h2) this.k2=gr(this.k2,Float64Array);if(this.h3) this.k3=gr(this.k3,Int32Array);
+    this.cnt=gr(this.cnt,Uint8Array);this.alive=gr(this.alive,Uint8Array);
+    const q=new Int32Array(nc).fill(-1);q.set(this.qh);this.qh=q;const e=new Int32Array(nc).fill(-1);e.set(this.eh);this.eh=e;
+    this.cap=nc;
+  }
+  addQ(i,v){
+    for(let p=this.qh[i];p>=0;p=this.qn[p]) if(this.qv[p]===v) return;
+    if(this.qc===this.qv.length){const nl=this.qv.length*2,a=new Uint16Array(nl);a.set(this.qv);this.qv=a;const b=new Int32Array(nl);b.set(this.qn);this.qn=b;}
+    this.qv[this.qc]=v;this.qn[this.qc]=this.qh[i];this.qh[i]=this.qc++;
+  }
+  qsOf(i,out){out.length=0;for(let p=this.qh[i];p>=0;p=this.qn[p]) out.push(this.qv[p]);return out;}
+  // the same predecessor is always added in one go (all placements of one board are processed together), so checking the newest edge is enough to avoid duplicates
+  addEdge(i,from){
+    const h=this.eh[i];if(h>=0&&this.ef[h]===from) return;
+    if(this.ec===this.ef.length){const nl=this.ef.length*2,a=new Int32Array(nl);a.set(this.ef);this.ef=a;const b=new Int32Array(nl);b.set(this.en);this.en=b;}
+    this.ef[this.ec]=from;this.en[this.ec]=h;this.eh[i]=this.ec++;
+  }
+  releaseEdges(){this.ef=this.en=this.eh=null;this.ec=0;}
+  releaseQueues(){this.qv=this.qn=this.qh=null;this.qc=0;}
+}
+// Boards that can never be filled, judged on the hv rows that are still part of the picture (all pieces must stay inside them):
+//  - a column whose empty cells are all boxed in horizontally can only take vertical I pieces: its empty count must be a multiple of 4
+//  - if every row has a filled cell in one of two neighbouring columns, no piece can cross between them (a row only disappears once it
+//    is full): the empty cells on each side must be a multiple of 4 on their own
+function illegalBoard(r,B,hv){
+  const rb=B-hv;let anyNB=0,anyE=0,both=1023;
+  // exactly 4 empty cells left = the last piece: they must form one connected group (a tetromino); lines cleared before can't matter, the piece lands on this very board
+  {let ne=0;for(let y=rb;y<B;y++) ne+=10-POP[r[y]];
+   if(ne===4){
+     let sy=-1,sx=0;
+     for(let y=rb;y<B&&sy<0;y++){const e=~r[y]&1023;if(e){sy=y;sx=31-Math.clz32(e&-e);}}
+     const seen=new Set([sy*10+sx]),st=[sy*10+sx];
+     while(st.length){
+       const v=st.pop(),y=(v/10)|0,x=v%10;
+       for(let d=0;d<4;d++){
+         const ny=y+(d===0?-1:d===1?1:0),nx=x+(d===2?-1:d===3?1:0);
+         if(ny<rb||ny>=B||nx<0||nx>9||((r[ny]>>nx)&1)) continue;
+         const k=ny*10+nx;if(!seen.has(k)){seen.add(k);st.push(k);}
+       }
+     }
+     if(seen.size!==4) return true;
+   }}
+  for(let y=rb;y<B;y++){
+    const v=r[y],lf=((v<<1)|1)&1023,rf=((v>>1)|512)&1023,e=~v&1023;
+    anyE|=e;anyNB|=e&~(lf&rf);both&=(v|(v>>1));
+  }
+  const iso=anyE&~anyNB;
+  if(iso) for(let c=0;c<10;c++) if((iso>>c)&1){let cnt=0;for(let y=rb;y<B;y++) cnt+=((r[y]>>c)&1)^1;if(cnt&3) return true;}
+  both&=511;
+  if(both) for(let c=0;c<9;c++) if((both>>c)&1){let cnt=0;const m=(2<<c)-1;for(let y=rb;y<B;y++) cnt+=c+1-POP[r[y]&m];if(cnt&3) return true;}
+  return false;
+}
+// every lock placement of piece `shape` on `rows` -> board after the line clears
+function placementsOf(rows,shape,ctx,keyOf,cBase,Lh,full){
+  const B=ctx.B,ids=placementIds(rows,TYPES[shape],ctx.u180,B,ctx.spin),seen=new Set(),out=[];
+  for(const id of ids){
+    if(seen.has(id)) continue;seen.add(id);
+    const sig=id%SIGM,tl=(id-sig)/SIGM,top=(tl/10)|0,left=tl%10;
+    const d=sig%128,r1=(sig-d)/128,c=r1%128,r2=(r1-c)/128,b=r2%128,a=(r2-b)/128,offs=[a,b,c,d];
+    const nr=rows.slice(),cy=[],cx=[];
+    for(let i=0;i<4;i++){const y=top+((offs[i]/10)|0),x=left+offs[i]%10;cy.push(y);cx.push(x);nr[y]|=1<<x;}
+    // clear full rows (clr: bit k = the row k rows above the floor of the board before the clear)
+    const res=new Array(B).fill(0);let w=B-1,clr=0,cnt=0;
+    for(let y=B-1;y>=0;y--){const v=nr[y];if(v===1023){clr|=1<<(B-1-y);cnt++;}else res[w--]=v;}
+    let ti=0;while(ti<B&&res[ti]===0) ti++;
+    if((B-ti)+cBase+cnt>Lh) continue;            // the picture only has Lh rows: nothing may stick out above them
+    if(illegalBoard(res,B,Lh-cBase-cnt)) continue;
+    const key=keyOf(res),o={nrows:res,key,k2:K2,k3:K3,cnt};
+    if(full){o.cy=cy;o.cx=cx;o.clr=clr;}
+    out.push(o);
+  }
+  return out;
+}
+const picRow=(cm,k)=>{let z=-1;for(let p=0;;p++){if(!((cm>>p)&1)){z++;if(z===k) return p;}}};
+const isEmptyRows=r=>{for(let i=0;i<r.length;i++) if(r[i]) return false;return true;};
+// bag description of the first m pieces: one bag per top-level item that can only produce the pieces it lists (a superset is fine, the
+// queues are checked exactly afterwards)
+function bagSpecs(items,m){
+  const specs=[];let pos=0;
+  for(const it of items){
+    if(pos>=m) break;
+    const opts=nodeOptions(it),len=opts[0].q.length,cnt={};
+    for(const o of opts){const c={};for(const ch of o.q) c[ch]=(c[ch]||0)+1;for(const ch in c) cnt[ch]=Math.max(cnt[ch]||0,c[ch]);}
+    let letters='';for(const t of TYPES) letters+=t.repeat(cnt[t]||0);
+    const r=Math.min(len,m-pos);
+    if(letters.length>MAX_BAG){
+      // does not fit one bag (e.g. [[IOTSZJL] [IOTSZJL]]2): one single-draw bag per queue position holding every piece that can show up there.
+      // Only the scan gets looser; every queue is still checked exactly afterwards, so the answer is the same.
+      for(let p=0;p<r;p++){
+        const seen=new Set();for(const o of opts) seen.add(o.q[p]);
+        let sp='';for(const t of TYPES) if(seen.has(t)) sp+=t;
+        specs.push({s:sp,n:1});
+      }
+    } else specs.push({s:letters,n:r});
+    pos+=r;
+  }
+  return specs;
+}
+// scan + cull + place: every distinct set of pieces that perfect-clears the board
+function* solve3(o,ctx,Lh,specs,n,placeLast,useHold){
+  const H=ctx.B-BUF,keyOf=boardKeyFn(H),bags=specs.map(s=>new BagM(s.s,s.n));
+  const init=new Set();{const q0=bags[0].full;for(let s=0;s<7;s++){if(o.firsts&&!o.firsts.includes(TYPES[s])) continue;const t=qSwap(q0,bags[0],s);if(t>=0) init.add(t);}}
+  const stages=[];let first=true;
+  bags.forEach(bag=>{for(let i=0;i<bag.count;i++){if(first){first=false;continue;}stages.push({bag,isFirst:i===0,cache:new Map()});}});
+  const total=stages.length+(placeLast?1:0);
+  o.qinfo={stages,init,useHold};
+  const tick=()=>((++o.nodes)&255)===0;
+  // ---- 1. scan
+  o.ph='scan';o.sn=total;o.tp[0]=performance.now();
+  const B=ctx.B,S=[],qsBuf=[],rowsBuf=new Array(B).fill(0);
+  let prev=new Stage(H);
+  {const a0=keyOf(ctx.rows0),i0=prev.findOrAdd(a0,K2,K3,0);for(const q of init) prev.addQ(i0,q);}
+  S.push(prev);
+  for(let si=0;si<total;si++){
+    o.si=si+1;
+    const next=new Stage(H),last=si>=stages.length;
+    for(let ni=0;ni<prev.n;ni++){
+      prev.qsOf(ni,qsBuf);
+      unpackRows(prev.k1[ni],prev.h2?prev.k2[ni]:0,prev.h3?prev.k3[ni]:0,H,rowsBuf);
+      const cb=prev.cnt[ni];
+      let shapes;
+      if(last){shapes=new Set();for(const q of qsBuf) if((q>>13)<7) shapes.add(q>>13);}
+      else shapes=[0,1,2,3,4,5,6];
+      for(const sh of shapes){
+        let nq=null;
+        if(!last){nq=bagTake(qsBuf,stages[si].bag,sh,stages[si].isFirst,useHold,stages[si].cache);if(!nq.size) continue;}
+        for(const pl of placementsOf(rowsBuf,sh,ctx,keyOf,cb,Lh,false)){
+          const t=next.findOrAdd(pl.key,pl.k2,pl.k3,cb+pl.cnt);
+          if(next.isNew&&next.n>MAX_BOARDS){o.err='TOO_BIG';o.errN=next.n;return null;}
+          if(nq) for(const q of nq) next.addQ(t,q);
+          next.addEdge(t,ni);
+        }
+        if(tick()) yield;
+      }
+    }
+    prev=next;S.push(prev);o.boards=prev.n;
+    if(!prev.n) return [];
+  }
+  // ---- 2. cull
+  o.ph='cull';o.tp[1]=performance.now();
+  for(let i=0;i<prev.n;i++) if(prev.k1[i]===0&&(!prev.h2||prev.k2[i]===0)&&(!prev.h3||prev.k3[i]===0)) prev.alive[i]=1;   // the empty board
+  for(let i=S.length-1;i>=1;i--){
+    const st=S[i],ps=S[i-1];
+    for(let ni=0;ni<st.n;ni++) if(st.alive[ni]) for(let e=st.eh[ni];e>=0;e=st.en[e]) ps.alive[st.ef[e]]=1;
+    st.releaseEdges();st.releaseQueues();
+    yield;
+  }
+  S[0].releaseEdges();S[0].releaseQueues();
+  // ---- 3. place
+  o.ph='place';o.tp[2]=performance.now();
+  const rootB={rows:ctx.rows0.slice(),cm:0,pcs:[],codes:[],qs:init,c:0,id:0};o.dagRoot=rootB;o.nid=0;
+  let prevP=new Map([['',rootB]]);
+  for(let si=0;si<total;si++){
+    o.si=si+1;
+    const next=new Map(),last=si>=stages.length,tgt=S[si+1];
+    for(const bb of prevP.values()){
+      let shapes;
+      if(last){shapes=new Set();for(const q of bb.qs) if((q>>13)<7) shapes.add(q>>13);}
+      else shapes=[0,1,2,3,4,5,6];
+      for(const sh of shapes){
+        let nq=null;
+        if(!last){nq=bagTake(bb.qs,stages[si].bag,sh,stages[si].isFirst,useHold,stages[si].cache);if(!nq.size) continue;}
+        for(const pl of placementsOf(bb.rows,sh,ctx,keyOf,bb.c,Lh,true)){
+          const ti=tgt.find(pl.key,pl.k2,pl.k3);
+          if(ti<0||!tgt.alive[ti]) continue;
+          // the piece in the unrolled picture (rows from the floor, skipping the rows cleared before it)
+          const cells=[];let code=[];
+          for(let i=0;i<4;i++){const pr=picRow(bb.cm,ctx.B-1-pl.cy[i]);cells.push([pl.cx[i],pr]);code.push(pr*10+pl.cx[i]);}
+          code.sort((a,b)=>a-b);
+          const pc=sh*1e9+((code[0]*160+code[1])*160+code[2])*160+code[3];
+          let cm=bb.cm;for(let k=0;k<ctx.B;k++) if((pl.clr>>k)&1) cm|=1<<picRow(bb.cm,k);
+          const codes=bb.codes.concat([pc]).sort((a,b)=>a-b),key=codes.join(',');
+          let nb=next.get(key);
+          if(!nb){
+            nb={rows:pl.nrows,cm,pcs:bb.pcs.concat([{t:sh,cells}]),codes,qs:new Set(),c:bb.c+pl.cnt,id:++o.nid};next.set(key,nb);
+            if(next.size>MAX_BOARDS){o.err='TOO_BIG';o.errN=next.size;return null;}
+          }
+          if(nq) for(const q of nq) nb.qs.add(q);
+          if(o.seeN!=null){const ed=bb.ed||(bb.ed=[]);if(!ed.some(x=>x.sh===sh&&x.nb===nb)) ed.push({sh,nb,pc});}
+        }
+        if(tick()) yield;
+      }
+    }
+    prevP=next;o.boards=prevP.size;
+  }
+  const sols=[];
+  for(const bb of prevP.values()) if(isEmptyRows(bb.rows)) sols.push(bb);
+  return sols;
+}
+// every order (as a string of piece types) in which the pieces of a solution can be placed, spins / tucks included, and that the bags /
+// hold of the queue can deliver (same queue states as the scan, so unreachable orders are never built)
+function orderSet(T,ctx,qi){
+  const n=T.p.length,{stages,init,useHold}=qi;
+  let layer=new Map();
+  for(const q of init) layer.set(q,new Set(['']));
+  for(let step=0;step<n;step++){
+    const nx=new Map(),last=step>=stages.length,rmc=new Map();
+    for(const [key,strs] of layer){
+      const S=Math.floor(key/65536),q=key%65536;
+      let m=rmc.get(S);if(m===undefined){m=reachMask(T,S,ctx);rmc.set(S,m);}
+      for(let i=0;i<n;i++){
+        if(!((m>>i)&1)||((S>>i)&1)) continue;
+        const t=T.p[i].t,sh=TIDX[t];
+        let nqs;
+        if(last){if((q>>13)!==sh) continue;nqs=[0];}     // the last piece is the one in the hold slot
+        else nqs=bagTake(new Set([q]),stages[step].bag,sh,stages[step].isFirst,useHold,stages[step].cache);
+        for(const nq of nqs){
+          const k2=(S|(1<<i))*65536+nq;let tg=nx.get(k2);if(!tg) nx.set(k2,tg=new Set());
+          for(const x of strs) tg.add(x+t);
+        }
+      }
+    }
+    layer=nx;
+  }
+  const out=new Set();
+  for(const strs of layer.values()) for(const x of strs) out.add(x);
+  return out;
+}
+// Fewest solutions that still cover every queue group (a group = the solutions one set of queues can use; a solution covers it when it is in the set).
+// Exact minimum hitting set. Steps: (1) reduce the instance until nothing changes: a group with one solution forces it, a solution whose groups are all
+// covered by another solution is dropped, a group that contains another group is dropped; (2) split into independent components (groups sharing no solution)
+// and solve each alone; (3) per component: iterative deepening on the size k (greedy answer = upper bound, k = 1,2,.. until a hit set of size k exists,
+// so the first success is the proven minimum) with branching on the unhit group with fewest candidates, earlier siblings banned in later branches,
+// and a lower bound from pairwise disjoint unhit groups (smallest first). After limitMs it stops and keeps the best found (exact=false).
+// Picks come back in greedy order (most queue weight first, ties: more spins).
+function* minCoverG(gl0,spOf,limitMs){
+  const gl=gl0.filter(g=>g[0].length),total=gl0.reduce((a,g)=>a+g[1],0),ng=gl.length;
+  if(!ng) return {picks:[],exact:true,total,covered:0};
+  const sg=new Map();gl.forEach((g,gi)=>{for(const s of g[0]){let a=sg.get(s);if(!a) sg.set(s,a=[]);a.push(gi);}});
+  const greedy=allowed=>{
+    const left=new Uint8Array(ng).fill(1);let rem=ng,covered=0;const picks=[];
+    while(rem>0){
+      let best=null,bw=0;
+      for(const [s,arr] of sg){
+        if(allowed&&!allowed.has(s)) continue;
+        let w=0;for(let i=0;i<arr.length;i++) if(left[arr[i]]) w+=gl[arr[i]][1];
+        if(w>bw+1e-12||(w>0&&Math.abs(w-bw)<=1e-12&&spOf(s)>spOf(best))){bw=w;best=s;}
+      }
+      if(best===null) break;
+      picks.push({idx:best,gain:bw});covered+=bw;
+      for(const gi of sg.get(best)) if(left[gi]){left[gi]=0;rem--;}
+    }
+    return {picks,covered};
+  };
+  const g0=greedy(null);
+  let best=g0.picks.map(p=>p.idx),exact=true;
+  if(best.length>1){
+    const t0=performance.now(),late=()=>performance.now()-t0>limitMs;
+    // ---- compact ids + mutable group/solution sets
+    const ev=[],eid=new Map();
+    const gs=gl.map(g=>{const st=new Set();for(const x of g[0]){let i=eid.get(x);if(i===undefined){i=ev.length;eid.set(x,i);ev.push(x);}st.add(i);}return st;});
+    const NG=ng,NE=ev.length,eg=Array.from({length:NE},()=>new Set());
+    gs.forEach((st,gi)=>{for(const x of st) eg[x].add(gi);});
+    const gOn=new Uint8Array(NG).fill(1),forced=[],sp=x=>spOf(ev[x]);
+    const killG=gi=>{gOn[gi]=0;for(const x of gs[gi]) eg[x].delete(gi);};
+    // ---- 1. reduce to a fixpoint (each rule keeps a minimum hit set of the same size)
+    const stampG=new Int32Array(NG);let sgn=0,ops=0;const OPS=8e6;
+    for(let round=0;round<30&&!late()&&ops<OPS;round++){
+      let changed=false;
+      // forced: a group with a single solution
+      for(let gi=0;gi<NG;gi++) if(gOn[gi]&&gs[gi].size===1){
+        const x=gs[gi].values().next().value;forced.push(x);changed=true;
+        for(const hg of [...eg[x]]) killG(hg);
+      }
+      // solution dominance: drop x when another solution y is in every group x is in
+      for(let x=0;x<NE&&ops<OPS;x++){
+        const ex=eg[x];if(!ex.size) continue;
+        let g1=-1,m=1e9;for(const gi of ex) if(gs[gi].size<m){m=gs[gi].size;g1=gi;}
+        for(const y of gs[g1]){
+          if(y===x) continue;ops+=ex.size;
+          const ey=eg[y];if(ey.size<ex.size) continue;
+          let ok=true;for(const gi of ex) if(!ey.has(gi)){ok=false;break;}
+          if(!ok) continue;
+          if(ey.size>ex.size||sp(y)>sp(x)||(sp(y)===sp(x)&&y<x)){for(const gi of [...ex]) gs[gi].delete(x);ex.clear();changed=true;break;}
+        }
+      }
+      // group dominance: drop a group that contains another group
+      const order=[];for(let gi=0;gi<NG;gi++) if(gOn[gi]) order.push(gi);
+      order.sort((a,b)=>gs[a].size-gs[b].size);
+      for(const gi of order){
+        if(!gOn[gi]||ops>=OPS) continue;
+        const g=gs[gi];sgn++;let dom=false;
+        for(const x of g){
+          for(const h of eg[x]){
+            ops++;
+            if(h===gi||!gOn[h]||stampG[h]===sgn) continue;stampG[h]=sgn;
+            const hs=gs[h];if(hs.size>g.size||(hs.size===g.size&&h>gi)) continue;
+            let sub=true;for(const y of hs) if(!g.has(y)){sub=false;break;}
+            if(sub){dom=true;break;}
+          }
+          if(dom) break;
+        }
+        if(dom){killG(gi);changed=true;}
+      }
+      if(!changed) break;
+    }
+    // ---- 2. independent components
+    const par=new Int32Array(NG);for(let i=0;i<NG;i++) par[i]=i;
+    const find=a=>{while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;};
+    for(let x=0;x<NE;x++){let f=-1;for(const gi of eg[x]){if(f<0) f=gi;else par[find(gi)]=find(f);}}
+    const cm=new Map();for(let gi=0;gi<NG;gi++) if(gOn[gi]){const r=find(gi);let a=cm.get(r);if(!a) cm.set(r,a=[]);a.push(gi);}
+    const comp=[...cm.values()].sort((a,b)=>a.length-b.length).map(gis=>{
+      const eIds=[],lid=new Map();
+      const ga=gis.map(gi=>{const a=[];for(const x of gs[gi]){let l=lid.get(x);if(l===undefined){l=eIds.length;lid.set(x,l);eIds.push(x);}a.push(l);}return a;});
+      const ea=eIds.map(()=>[]);ga.forEach((a,i)=>a.forEach(l=>ea[l].push(i)));
+      // greedy upper bound (most groups first, ties: more spins)
+      const gu=new Uint8Array(ga.length);let rem=ga.length;const ub=[];
+      while(rem>0){
+        let bx=-1,bc=0;
+        for(let l=0;l<ea.length;l++){let c=0;for(const i of ea[l]) if(!gu[i]) c++;if(c>bc||(c>0&&c===bc&&sp(eIds[l])>sp(eIds[bx]))){bc=c;bx=l;}}
+        ub.push(bx);for(const i of ea[bx]) if(!gu[i]){gu[i]=1;rem--;}
+      }
+      return {ga,ea,eIds,ub,lb:1,res:ub};
+    });
+    const forcedV=forced.map(x=>ev[x]);
+    const prog={nodes:0,best:0,lb:0,rb:0,rn:0,ids:[]};
+    const sync=()=>{const ids=forcedV.slice();let l=forced.length;for(const c of comp){for(const bx of c.res) ids.push(ev[c.eIds[bx]]);l+=c.lb;}prog.ids=ids;prog.best=ids.length;prog.lb=l;};
+    sync();yield prog;
+    // ---- 3. exact search per component: iterative deepening on k
+    let nodes=0,timeout=false;
+    for(const c of comp){
+      if(timeout) break;
+      if(c.ub.length<=1){c.lb=c.ub.length;continue;}
+      const {ga,ea}=c,n=ga.length,ne=ea.length;
+      const ordG=ga.map((a,i)=>i).sort((a,b)=>ga[a].length-ga[b].length);
+      const hit=new Uint16Array(n),banned=new Uint8Array(ne),used=new Int32Array(ne),chosen=[];let stp=0;
+      const dfs=function*(k){
+        if(timeout) return false;
+        if((++nodes&511)===0){if(late()){timeout=true;return false;}prog.nodes=nodes;yield prog;}
+        // unhit group with fewest free solutions; lower bound = disjoint unhit groups, smallest first
+        const sT=++stp;let pg=-1,pl=1e9,packs=0;
+        for(const gi of ordG){
+          if(hit[gi]) continue;
+          const es=ga[gi];let cnt=0,free=true;
+          for(const x of es){if(banned[x]) continue;cnt++;if(used[x]===sT) free=false;}
+          if(cnt===0) return false;
+          if(cnt<pl){pl=cnt;pg=gi;}
+          if(free){packs++;for(const x of es) if(!banned[x]) used[x]=sT;}
+        }
+        if(pg<0) return true;
+        if(chosen.length+packs>k) return false;
+        const cands=ga[pg].filter(x=>!banned[x]).map(x=>{let cc=0;for(const gi of ea[x]) if(!hit[gi]) cc++;return [x,cc];}).sort((p,q)=>q[1]-p[1]);
+        const bannedHere=[];let bi=0,found=false;
+        for(const [x] of cands){
+          if(chosen.length===0){prog.rb=++bi;prog.rn=cands.length;}
+          for(const gi of ea[x]) hit[gi]++;chosen.push(x);
+          if(yield* dfs(k)){found=true;break;}
+          chosen.pop();for(const gi of ea[x]) hit[gi]--;
+          if(timeout) break;
+          banned[x]=1;bannedHere.push(x);
+        }
+        for(const x of bannedHere) banned[x]=0;
+        return found;
+      };
+      for(let k=Math.max(1,c.lb);k<c.ub.length;k++){
+        hit.fill(0);banned.fill(0);chosen.length=0;
+        const ok=yield* dfs(k);
+        if(timeout) break;
+        if(ok){c.res=chosen.slice();c.lb=k;sync();yield prog;break;}
+        c.lb=k+1;sync();yield prog;
+      }
+      prog.rb=0;prog.rn=0;
+      if(timeout) exact=false;else c.lb=c.res.length;
+      sync();
+    }
+    best=prog.ids;
+  }
+  const r=best.length===g0.picks.length&&exact?g0:greedy(new Set(best));
+  return {picks:r.picks,exact,total,covered:r.covered};
+}
+// order the given solutions greedily (most queue weight first, ties: more spins) and report what they cover
+function coverOrder(gl0,spOf,ids){
+  const gl=gl0.filter(g=>g[0].length),total=gl0.reduce((a,g)=>a+g[1],0),al=new Set(ids),ng=gl.length,sg=new Map();
+  gl.forEach((g,gi)=>{for(const x of g[0]) if(al.has(x)){let a=sg.get(x);if(!a) sg.set(x,a=[]);a.push(gi);}});
+  const left=new Uint8Array(ng).fill(1),picks=[];let covered=0;
+  for(;;){
+    let best=null,bw=0;
+    for(const [x,arr] of sg){
+      let w=0;for(const gi of arr) if(left[gi]) w+=gl[gi][1];
+      if(w>bw+1e-12||(w>0&&Math.abs(w-bw)<=1e-12&&spOf(x)>spOf(best))){bw=w;best=x;}
+    }
+    if(best===null) break;
+    picks.push({idx:best,gain:bw});covered+=bw;
+    for(const gi of sg.get(best)) left[gi]=0;
+  }
+  return {picks,total,covered};
+}
+function minCover(gl0,spOf,limitMs){const g=minCoverG(gl0,spOf,limitMs);let r;while(!(r=g.next()).done);return r.value;}
+function* search(o){
+  try{yield* search0(o);}finally{o.ph='done';o.tEnd=performance.now();}
+}
+function* search0(o){
+  o.runId=++RUNID;
+  let {seqs}=o;const {rows0,useHold,u180,H}=o,spin=o.spin!==false,B=H+BUF,Lh=Math.min(H,MAXL);
+  o.shapes=[];o.okW=0;o.okN=0;o.doneW=0;o.seqDone=0;o.ns=[];o.nodes=0;o.solN=0;o.boards=0;o.tp=[null,null,null,null,null];o.minimal=null;o.minSkipped=false;
+  const filled=rows0.reduce((a,v)=>a+popc(v),0),ns=[];
+  for(let n=1;n<=seqs.len;n++) if((filled+4*n)%10===0&&(filled+4*n)/10===Lh) ns.push(n);
+  // no piece count fits the board: the single empty queue simply fails
+  let n=1,m=0,Ts=[];
+  const ctx={rows0,B,spin,u180,pk:new Map()};
+  if(ns.length){
+    n=ns[0];m=Math.min(useHold?n+1:n,seqs.len);
+    seqs=seqs.truncate(m);o.seqsN=seqs.n;o.seeN=(o.see!=null&&o.see+1<m)?o.see:null;
+    if(seqs.n>MAX_CASES){o.err='TOO_MANY';o.errN=seqs.n;return;}
+    let specs;
+    try{specs=bagSpecs(o.items,m);}catch(e){o.err='TOO_MANY';o.errN=Infinity;return;}
+    o.curN=n;
+    // ---- scan / cull / place
+    const sols=yield* solve3(o,ctx,Lh,specs,n,m===n,useHold);
+    if(!sols) return;
+    Ts=sols.map(bb=>({p:bb.pcs.map(p=>({t:TYPES[p.t],cells:p.cells.map(([x,pr])=>[x,H-1-pr])})),bb:o.seeN!=null?bb:null,st:new Map(),rm:new Map()}));
+  } else {seqs=seqs.truncate(0);o.seqsN=seqs.n;}
+  o.solN=Ts.length;
+  if(o.seeN!=null&&Ts.length&&o.dagRoot){yield* seeFinish(o,ctx,Ts,seqs,n,m,useHold,o.seeN,H);return;}
+  // ---- supporting orders of every solution
+  o.ph='orders';o.tp[3]=performance.now();o.si=0;o.sn=Ts.length;
+  const orderSol=new Map();
+  for(let i=0;i<Ts.length;i++){
+    for(const s of orderSet(Ts[i],ctx,o.qinfo)){let a=orderSol.get(s);if(!a) orderSol.set(s,a=[]);a.push(i);}
+    o.si=i+1;if((i&7)===0) yield;
+  }
+  const Pset=new Set();
+  for(const s of orderSol.keys()) for(let i=0;i<=s.length;i++) Pset.add(s.slice(0,i));
+  // ---- every queue: can some supporting order be played from it?
+  o.ph='eval';o.tp[4]=performance.now();
+  const bagsM=seqs.bags||[],wantLo=!o.probOnly&&!o.solOnly&&bagsM.length>0;
+  const loFrom=(qi,h,pref)=>{
+    if(qi<1) return '~';
+    let bg=null;for(const b of bagsM) if(b.off<=qi-1&&qi-1<b.off+b.len){bg=b;break;}
+    if(!bg) return '~';
+    const cnt={};for(const ch of bg.elems) cnt[ch]=(cnt[ch]||0)+1;
+    for(let j=bg.off;j<Math.min(bg.off+bg.len,qi);j++){if(j===h) continue;const ch=pref[j];if(cnt[ch]>0) cnt[ch]--;}
+    let r='';for(const t of TYPES) r+=t.repeat(cnt[t]||0);
+    return r;
+  };
+  // state = placement order played so far + queue index of the held piece (-1 none) (+ "must place the next piece" after holding into an empty hold)
+  const stepL=(states,pref,qi)=>{
+    const cur=pref[qi],out=new Map();
+    const add=s=>{const k=s.done?'D'+s.qi+','+s.h+','+s.P:s.P+'|'+s.h+'|'+(s.mp?1:0);if(!out.has(k)) out.set(k,s);};
+    for(const s of states){
+      if(s.done){add(s);continue;}
+      const P2=s.P+cur;
+      if(Pset.has(P2)){if(P2.length===n) add({done:true,qi:qi+1,h:s.h,P:P2});else add({P:P2,h:s.h,mp:false});}
+      if(useHold&&!s.mp){
+        if(s.h>=0){
+          const P3=s.P+pref[s.h];
+          if(Pset.has(P3)){if(P3.length===n) add({done:true,qi:qi+1,h:qi,P:P3});else add({P:P3,h:qi,mp:false});}
+        } else add({P:s.P,h:qi,mp:true});
+      }
+    }
+    return [...out.values()];
+  };
+  const endsOf=(states,pref)=>{
+    const e=new Map();
+    for(const s of states){
+      if(s.done) e.set(s.qi+','+s.h+','+s.P,[s.qi,s.h,s.P]);
+      else if(useHold&&!s.mp&&s.h>=0){const P2=s.P+pref[s.h];if(P2.length===n&&Pset.has(P2)) e.set(m+',-1,'+P2,[m,-1,P2]);}
+    }
+    return e;
+  };
+  const wSol=new Float64Array(Ts.length),firstQ=new Array(Ts.length).fill(null);
+  const groups=new Map();                       // sorted solution indices -> {es, w}: queues that the same solutions solve
+  const lsets=new Map(),marg={};let loOkw=0,noinfo=0;
+  const qbuf=new Uint8Array(Math.max(m,1)),prevBuf=new Int8Array(Math.max(m,1)).fill(-1);
+  const layers=new Array(m+1),prefA=new Array(m+1).fill('');layers[0]=[{P:'',h:-1,mp:false}];
+  const flist=[];let fn=0,fw=0;
+  const svSets=wantLo?new Array(Ts.length).fill(null):null;   // per solution: leftover sets (same values as the chips) over every queue that plays it
+  // solutions only: no need to classify every queue, stop as soon as each solution has one queue that plays it (that queue gives its example order)
+  let needLeft=0;const needSol=o.solOnly?new Set():null;
+  if(needSol){for(const a of orderSol.values()) for(const i of a) needSol.add(i);needLeft=needSol.size;}
+  for(let k=0;k<seqs.n;k++){
+    if(needSol&&needLeft<=0) break;
+    const qw=seqs.fill(k,qbuf);
+    let c=0;while(c<m&&qbuf[c]===prevBuf[c]) c++;
+    for(let Lq=c;Lq<m;Lq++){
+      prevBuf[Lq]=qbuf[Lq];prefA[Lq+1]=prefA[Lq]+TYPES[qbuf[Lq]];
+      layers[Lq+1]=layers[Lq].length?stepL(layers[Lq],prefA[Lq+1],Lq):[];
+    }
+    const pref=prefA[m],e=layers[m].length?endsOf(layers[m],pref):null;
+    o.doneW+=qw;o.seqDone++;
+    if(e&&e.size){
+      o.okW+=qw;o.okN++;
+      const all=new Set(),out=new Set();
+      for(const [qi,h,P] of e.values()){
+        for(const s of orderSol.get(P)||[]) all.add(s);
+        if(wantLo){const x=loFrom(qi,h,pref);out.add(x);if(x!=='~') for(const s of orderSol.get(P)||[]){(svSets[s]||(svSets[s]=new Set())).add(x);}}
+      }
+      for(const s of all){wSol[s]+=qw;if(firstQ[s]===null){firstQ[s]=pref;if(needSol&&needSol.has(s)) needLeft--;}}
+      if(!o.probOnly&&!o.solOnly){
+        const es=[...all].sort((a,b)=>a-b),key=es.join(','),g=groups.get(key);
+        if(g) g.w+=qw;else groups.set(key,{es,w:qw});
+      }
+      if(wantLo){
+        loOkw+=qw;
+        const real=[...out].filter(x=>x!=='~');
+        if(!real.length) noinfo+=qw;
+        else{
+          const ms=new Set();
+          for(const x of real){lsets.set(x,(lsets.get(x)||0)+qw);for(const ch of x) ms.add(ch);}
+          for(const ch of ms) marg[ch]=(marg[ch]||0)+qw;
+        }
+      }
+    } else if(!o.solOnly){
+      fn++;fw+=qw;
+      flist.push([pref,qw]);
+    }
+    if((k&255)===0) yield;
+  }
+  if(wantLo) o.lo={sets:[...lsets],marg,okw:loOkw,noinfo};
+  if(o.okN>0) o.ns=[n];
+  if(!o.solOnly) o.fail={n:fn,w:fw,list:flist,cap:false};
+  if(o.probOnly) return;
+  // ---- save of a solution = pieces of the last bag minus the pieces the solution used from it (computed once the search is over).
+  //      Pieces placed before the last bag are taken off first; that needs every earlier item to be a bag drawn in full, otherwise the save is unknown ([]).
+  const lastBag=bagsM.find(b=>b.off<=m-1&&m-1<b.off+b.len);
+  const saveOf=T=>{
+    if(!lastBag) return [];
+    const cnt={};for(const p of T.p) cnt[p.t]=(cnt[p.t]||0)+1;
+    let covered=0;
+    for(const b of bagsM){
+      if(b.off+b.len>lastBag.off) continue;
+      if(b.len!==b.elems.length) return [];
+      covered+=b.len;for(const ch of b.elems) if(cnt[ch]>0) cnt[ch]--;
+    }
+    if(covered!==lastBag.off) return [];
+    const rest={};for(const ch of lastBag.elems) rest[ch]=(rest[ch]||0)+1;
+    for(const t in cnt) if(cnt[t]>0&&rest[t]>0) rest[t]=Math.max(0,rest[t]-cnt[t]);
+    let r='';for(const t of TYPES) r+=t.repeat(rest[t]||0);
+    return [r];
+  };
+  // ---- example order (steps for the viewer) of every solution that some queue needs
+  const shapes=[];
+  for(let i=0;i<Ts.length;i++){
+    if(!(wSol[i]>0)) continue;
+    const T=Ts[i],path=seqPath(T,firstQ[i],'',useHold,ctx);
+    if(!path) continue;
+    T.steps=buildSteps(T,path,ctx);T.q=firstQ[i];T.sp=T.steps.reduce((a,s)=>a+(s.spin?1:0),0);
+    shapes.push({idx:i,w:wSol[i],sp:T.sp,q:T.q,n,steps:T.steps,T,mn:0,mg:0,sv:wantLo?(svSets[i]?[...svSets[i]]:saveOf(T)):[]});
+  }
+  o.shapes=shapes;
+  if(groups.size){const pos=new Map(shapes.map((s,k)=>[s.idx,k]));o.grp=[...groups.values()].map(g=>[g.es.map(i=>pos.get(i)).filter(k=>k!==undefined),g.w]);}
+  // ---- minimal solution set: fewest solutions that still cover every queue that can clear (greedy set cover weighted by queue probability;
+  //      ties go to the solution with more spins)
+  if(groups.size){
+    const shOf=new Map(shapes.map(s=>[s.idx,s])),gl=[...groups.values()].map(g=>[g.es.filter(i=>shOf.has(i)),g.w]);
+    const r=minCover(gl,i=>i===null?-1:shOf.get(i).sp,4000);
+    r.picks.forEach((p,i)=>{const s=shOf.get(p.idx);s.mn=i+1;s.mg=p.gain;});
+    o.minimal=r.picks;o.minTotal=r.total;o.minCov=r.covered;o.minExact=r.exact;
+  }
+}
+// ================= See N =================
+// The player sees the current piece and the next N pieces (plus the hold) and plays the best move from that; later pieces are unknown and
+// follow the queue's own distribution (queue items are independent, so the unknown part is only the unseen rest of the item being drawn).
+// Expectimax over the "place" graph of solve3 (a node = the set of pieces placed so far, an edge = one more piece), so every finished play is a
+// concrete solution. A policy (best move per observation) is then walked to get per-solution probability, example play, leftover bag pieces,
+// failing prefixes, and the minimal set of solutions that keeps the same probability.
+let SEEST=0;
+function* seeFinish(o,ctx,Ts,seqs,n,m,useHold,N,H){
+  const parts=seqs.parts,bagsM=seqs.bags||[],wantLo=!o.probOnly&&!o.solOnly&&bagsM.length>0;
+  const P=parts.map(p=>p.map(op=>({s:op.q.join(''),w:op.w})));
+  const offs=[];{let a=0;for(const p of parts){offs.push(a);a+=p[0].q.length;}}
+  const partOf=d=>{let j=parts.length-1;while(j>0&&offs[j]>d) j--;return j;};
+  // a part whose options are all permutations of one multiset with equal weight (a bag) is exchangeable: what is still to come depends only on the
+  // letters already drawn, not on their order, so states that differ only in that order can share one cached value
+  const exch=P.map(op=>{
+    if(op.length<2) return false;
+    const srt=x=>x.split('').sort().join(''),k0=srt(op[0].s),w0=op[0].w;
+    let perm=1,cnt={},len=k0.length;for(const ch of k0) cnt[ch]=(cnt[ch]||0)+1;
+    for(let q=2;q<=len;q++) perm*=q;for(const ch in cnt) for(let q=2;q<=cnt[ch];q++) perm/=q;
+    return op.length===perm&&op.every(x=>srt(x.s)===k0&&Math.abs(x.w-w0)<1e-12);
+  });
+  const cc=new Map();
+  const canon=(j,s)=>{
+    if(!exch[j]) return j+':'+s;
+    const k=j+':'+s;let r=cc.get(k);if(r) return r;
+    r=j+'~'+s.split('').sort().join('');cc.set(k,r);return r;
+  };
+  const dc=new Map();
+  const dist=(j,s)=>{
+    const k=j+':'+s;let r=dc.get(k);if(r) return r;
+    const w={};let tot=0;
+    for(const op of P[j]) if(op.s.startsWith(s)){const x=op.s[s.length];w[x]=(w[x]||0)+op.w;tot+=op.w;}
+    r=Object.keys(w).map(x=>[x,w[x]/tot]);dc.set(k,r);return r;
+  };
+  const root=o.dagRoot;
+  Ts.forEach(T=>{T.cidx=new Map();T.bb.pcs.forEach((p,k)=>{const c=p.cells.map(([x,pr])=>pr*10+x).sort((a,b)=>a-b);T.cidx.set(p.t*1e9+((c[0]*160+c[1])*160+c[2])*160+c[3],k);});});
+  // observations known at the start: the current piece + N next
+  let lvl=[['',1]];
+  for(let d=0;d<Math.min(1+N,m);d++){const nx=[],j=partOf(d);for(const [ob,pw] of lvl) for(const [x,pr] of dist(j,ob.slice(offs[j]))) nx.push([ob+x,pw*pr]);lvl=nx;}
+  o.ph='eval';o.tp[4]=performance.now();o.seqsN=lvl.length;o.seqDone=0;
+  // ---- probability only: fast path. Boards (same stage + same rows) share one cache, states are small integers, no walk over the plays.
+  const partLen=P.map(op=>op[0].s.length);
+  const maxCnt=x=>{const c={};let mx=0;for(const ch of x){c[ch]=(c[ch]||0)+1;if(c[ch]>mx) mx=c[ch];}return mx;};
+  const fastOK=N+1<=8&&P.every((op,j)=>exch[j]?maxCnt(op[0].s)<8:partLen[j]<=7);
+  if(o.probOnly&&fastOK){
+    const pow8=[1];for(let q=1;q<=9;q++) pow8.push(pow8[q-1]*8);
+    const bmap=new Map();
+    const getB=nd=>{
+      if(nd.bd) return nd.bd;
+      const k=nd.pcs.length+'|'+nd.rows.join(',');let b=bmap.get(k);
+      if(!b){b={placed:nd.pcs.length,eb:[[],[],[],[],[],[],[]],es:[new Set(),new Set(),new Set(),new Set(),new Set(),new Set(),new Set()],mm:new Map()};bmap.set(k,b);}
+      nd.bd=b;return b;
+    };
+    const seenN=new Set();
+    (function build(nd){
+      if(seenN.has(nd)) return;seenN.add(nd);
+      const b=getB(nd);
+      if(nd.ed) for(const e of nd.ed){build(e.nb);const tb=getB(e.nb);if(!b.es[e.sh].has(tb)){b.es[e.sh].add(tb);b.eb[e.sh].push(tb);}}
+    })(root);
+    // what is still unknown, as a small object: part index + letters drawn so far in that part (as a multiset for bags)
+    const FEND={id:0,j:-1,d:m,s:'',dd:[],nx:[]};let fcount=1;const FM=new Map();
+    const mkF=(j,d,s)=>{
+      if(d>=m) return FEND;
+      let code=0;
+      if(exch[j]){for(const ch of s) code+=pow8[TIDX[ch]];}else{for(const ch of s) code=code*8+TIDX[ch]+1;}
+      const key=j*2097152+code;let F=FM.get(key);
+      if(!F){F={id:fcount++,j,d,s,dd:null,nx:[]};FM.set(key,F);}
+      return F;
+    };
+    const ddOf=F=>F.dd||(F.dd=dist(F.j,F.s).map(([x,pr])=>[TIDX[x],pr]));
+    const nextF=(F,x)=>{
+      let r=F.nx[x];if(r) return r;
+      const s2=F.s+TYPES[x];let j2=F.j,s3=s2;
+      if(s2.length===partLen[F.j]){j2=F.j+1;s3='';}
+      r=mkF(j2,F.d+1,s3);F.nx[x]=r;return r;
+    };
+    function tryP(b,t,nh,w2,wl2,F,best){
+      const L=b.eb[t];
+      for(let q=0;q<L.length;q++){const v=V(L[q],nh,false,w2,wl2,F);if(v>best){best=v;if(best>=1-1e-12) return best;}}
+      return best;
+    }
+    // state = board, hold (0 none, else piece+1), just-held flag, window of known pieces (base-8 digits, current piece first), unknown part
+    function V(b,h,mp,w,wl,F){
+      if(b.placed===n) return 1;
+      const key=F.id*268435456+w*16+h*2+(mp?1:0);
+      const c=b.mm.get(key);if(c!==undefined) return c;
+      const i=F.d-wl,need=Math.min(i+1+N,m);let best=0;
+      if(F.d<need){
+        const dd=F.dd||ddOf(F);
+        for(let q=0;q<dd.length;q++){const x=dd[q][0];best+=dd[q][1]*V(b,h,mp,w*8+x+1,wl+1,nextF(F,x));}
+      }else{
+        const hasCur=wl>0,cur=hasCur?Math.floor(w/pow8[wl-1])-1:-1;
+        const w2=hasCur?w%pow8[wl-1]:w,wl2=hasCur?wl-1:0;
+        if(hasCur){
+          best=tryP(b,cur,h,w2,wl2,F,0);
+          if(useHold&&!mp&&best<1-1e-12){
+            if(h>0){if(h-1!==cur) best=tryP(b,h-1,cur+1,w2,wl2,F,best);}
+            else{const v=V(b,cur+1,true,w2,wl2,F);if(v>best) best=v;}
+          }
+        }else if(useHold&&h>0&&!mp) best=tryP(b,h-1,0,w2,wl2,F,0);
+      }
+      b.mm.set(key,best);return best;
+    }
+    let lv=[[0,0,mkF(0,0,''),1]];
+    for(let d=0;d<Math.min(1+N,m);d++){const nx=[];for(const [w,wl,F,pw] of lv) for(const [x,pr] of ddOf(F)) nx.push([w*8+x+1,wl+1,nextF(F,x),pw*pr]);lv=nx;}
+    o.ph='eval';o.tp[4]=performance.now();o.seqsN=lv.length;o.seqDone=0;
+    const rootB=getB(root);let tot=0;
+    for(const [w,wl,F,pw] of lv){tot+=pw*V(rootB,0,false,w,wl,F);o.seqDone++;yield;}
+    const pv=Math.min(1,tot);
+    o.seeRes={N,p:pv};o.okW=pv;o.doneW=1;o.ns=[n];o.solN=Ts.length;o.shapes=[];
+    return;
+  }
+  // One solver; its values are cached on the nodes themselves (nd.mm). A = set of final nodes (solutions) the player may aim for, null = all.
+  // Changing A only invalidates the nodes that can still reach a changed solution, so the minimal-set search re-evaluates a small part of the graph.
+  const ONE={v:1,a:null};
+  function makeSolver(){
+    let A=null,st=++SEEST;
+    const okn=nd=>{if(nd.rs===st) return nd.rv;let r=false;if(nd.pcs.length===n) r=!A||A.has(nd);else if(nd.ed) for(const e of nd.ed) if(okn(e.nb)){r=true;break;}nd.rs=st;nd.rv=r;return r;};
+    // value depends on: the node (board), hold, the visible window, and what is still unknown (the unseen rest of the item being drawn)
+    const keyOf=(h,mp,i,obs)=>{const d=obs.length;let f='e';if(d<m){const j=partOf(d);f=canon(j,obs.slice(offs[j]));}return (h||'-')+(mp?'!':'')+'|'+obs.slice(i)+'|'+f;};
+    function E(nd,h,mp,i,obs){
+      if(nd.pcs.length===n) return ONE;
+      const key=keyOf(h,mp,i,obs);let mm=nd.mm;if(!mm) mm=nd.mm=new Map();
+      let en=mm.get(key);if(en!==undefined) return en;
+      const d=obs.length,need=Math.min(i+1+N,m);let best=0,ba=null;
+      if(d<need){const j=partOf(d);for(const [x,pr] of dist(j,obs.slice(offs[j]))) best+=pr*E(nd,h,mp,i,obs+x).v;}
+      else{
+        let eb=nd.eb;if(!eb){eb=nd.eb=[[],[],[],[],[],[],[]];if(nd.ed) for(const e of nd.ed) eb[e.sh].push(e);}
+        const cur=i<m?obs[i]:null;
+        // k: 0 place the current piece, 1 swap with hold and place the held piece, 2 hold into an empty slot, 3 queue exhausted: place the held piece
+        const tp=(t,nh,k)=>{const L=eb[TIDX[t]];for(let q=0;q<L.length;q++){const e=L[q];if(A&&!okn(e.nb)) continue;const v=E(e.nb,nh,false,i+1,obs).v;if(v>best+1e-12){best=v;ba={k,e,nh};if(best>=1-1e-12) return;}}};
+        if(cur!==null){
+          tp(cur,h,0);
+          if(useHold&&!mp&&best<1-1e-12){
+            if(h!==null){if(h!==cur) tp(h,cur,1);}
+            else{const v=E(nd,cur,true,i+1,obs).v;if(v>best+1e-12){best=v;ba={k:2,nh:cur};}}
+          }
+        } else if(useHold&&h!==null&&!mp) tp(h,null,3);
+      }
+      en={v:best,a:ba};mm.set(key,en);if(capOn&&++memoN>MEMO_CAP) throw SEE_CAP;return en;
+    }
+    return {E,setA(x){A=x;st=++SEEST;}};
+  }
+  let capOn=true,memoN=0;const MEMO_CAP=1500000,SEE_CAP={seeCap:1};
+  const S=makeSolver();
+  function* total(){o.seqDone=0;let t=0;for(const [ob,pw] of lvl){t+=pw*S.E(root,null,false,0,ob).v;o.seqDone++;yield;}return Math.min(1,t);}
+  // follow the best moves (path = linked list, only the first play of each solution is ever turned into an array)
+  function* walk(acc){
+    const rec=(nd,h,hi,mp,i,obs,pw,path)=>{
+      if(nd.pcs.length===n){acc.leaf(nd,obs,i,hi,pw,path);return;}
+      const en=S.E(nd,h,mp,i,obs);
+      if(en.v<=1e-15){if(acc.fail) acc.fail(obs,pw);return;}
+      const d=obs.length,need=Math.min(i+1+N,m);
+      if(d<need){const j=partOf(d);for(const [x,pr] of dist(j,obs.slice(offs[j]))) rec(nd,h,hi,mp,i,obs+x,pw*pr,path);return;}
+      const a=en.a;
+      if(a.k===2){rec(nd,a.nh,i,true,i+1,obs,pw,path);return;}
+      rec(a.e.nb,a.nh,a.k===0?hi:a.k===1?i:-1,false,i+1,obs,pw,acc.path?{pc:a.e.pc,u:a.k===0?mp:true,p:path}:null);
+    };
+    o.seqDone=0;
+    for(const [ob,pw] of lvl){rec(root,null,-1,false,0,ob,pw,null);o.seqDone++;yield;}
+  }
+  const loFrom=(qi,h,pref)=>{
+    if(qi<1) return '~';
+    let bg=null;for(const b of bagsM) if(b.off<=qi-1&&qi-1<b.off+b.len){bg=b;break;}
+    if(!bg) return '~';
+    const cnt={};for(const ch of bg.elems) cnt[ch]=(cnt[ch]||0)+1;
+    for(let j=bg.off;j<Math.min(bg.off+bg.len,qi);j++){if(j===h) continue;const ch=pref[j];if(cnt[ch]>0) cnt[ch]--;}
+    let r='';for(const t of TYPES) r+=t.repeat(cnt[t]||0);
+    return r;
+  };
+  let Vf;
+  try{Vf=yield* total();}
+  catch(err){
+    if(err!==SEE_CAP) throw err;
+    // the full See analysis (solution list, failing queues) needs too much memory: free it and fall back to the probability-only evaluation
+    const seen=new Set(),clr=nd=>{if(seen.has(nd)) return;seen.add(nd);nd.mm=null;nd.rs=0;if(nd.ed) for(const e of nd.ed) clr(e.nb);};clr(root);
+    if(!fastOK){o.err='이 조건은 See 분석이 너무 커서 계산할 수 없습니다. 넥스트를 줄이거나 See 값을 낮춰 보세요.';return;}
+    o.probOnly=true;o.capped=true;
+    yield* seeFinish(o,ctx,Ts,seqs,n,m,useHold,N,H);return;
+  }
+  capOn=false;
+  o.seeRes={N,p:Vf};o.okW=Vf;o.doneW=1;o.ns=[n];o.solN=Ts.length;o.shapes=[];
+  const needWalk=!o.probOnly;   // probability only: just the value, no walk over the plays
+  const solW=new Map(),ex=new Map(),lsets=new Map(),marg={},fl=[];let fn=0,fw=0,loOkw=0,noinfo=0;
+  if(needWalk) yield* walk({path:!o.probOnly,
+    leaf(nd,obs,i,hi,pw,path){
+      solW.set(nd,(solW.get(nd)||0)+pw);if(path&&!ex.has(nd)) ex.set(nd,{path,obs});
+      if(wantLo){
+        const x=loFrom(Math.min(i,m),hi,obs);loOkw+=pw;
+        if(x==='~') noinfo+=pw;else{lsets.set(x,(lsets.get(x)||0)+pw);for(const ch of new Set(x)) marg[ch]=(marg[ch]||0)+pw;}
+      }
+    },
+    fail:o.solOnly?null:(obs,pw)=>{fn++;fw+=pw;fl.push([obs,pw]);}});
+  if(needWalk&&!o.solOnly) o.fail={n:fn,w:fw,list:fl,cap:false};
+  if(wantLo) o.lo={sets:[...lsets],marg,okw:loOkw,noinfo};
+  if(o.probOnly) return;
+  const lastBag=bagsM.find(b=>b.off<=m-1&&m-1<b.off+b.len);
+  const saveOf=T=>{
+    if(!lastBag) return [];
+    const cnt={};for(const p of T.p) cnt[p.t]=(cnt[p.t]||0)+1;
+    let covered=0;
+    for(const b of bagsM){
+      if(b.off+b.len>lastBag.off) continue;
+      if(b.len!==b.elems.length) return [];
+      covered+=b.len;for(const ch of b.elems) if(cnt[ch]>0) cnt[ch]--;
+    }
+    if(covered!==lastBag.off) return [];
+    const rest={};for(const ch of lastBag.elems) rest[ch]=(rest[ch]||0)+1;
+    for(const t in cnt) if(cnt[t]>0&&rest[t]>0) rest[t]=Math.max(0,rest[t]-cnt[t]);
+    let r='';for(const t of TYPES) r+=t.repeat(rest[t]||0);
+    return [r];
+  };
+  const shapes=[];
+  Ts.forEach((T,i)=>{
+    const w=solW.get(T.bb);if(!(w>0)) return;
+    const e=ex.get(T.bb),path=[];for(let q=e.path;q;q=q.p) path.push([T.cidx.get(q.pc),q.u]);path.reverse();
+    T.steps=buildSteps(T,path,ctx);T.q=e.obs;T.sp=T.steps.reduce((a,s)=>a+(s.spin?1:0),0);
+    shapes.push({idx:i,w,sp:T.sp,q:T.q,n,steps:T.steps,T,mn:0,mg:0,sv:wantLo?saveOf(T):[]});
+  });
+  o.shapes=shapes;o.okN=shapes.length;
+  if(!shapes.length) return;
+  o.grp=shapes.map((s,k)=>[[k],s.w]);   // under See one play ends in exactly one solution
+  // minimal solution set: start from the solutions the best play uses and drop them one by one (least likely first) while the See probability stays the same
+  let cur=null,exact=true;
+  if(shapes.length>1){
+    const t0=performance.now();cur=new Set(shapes.map(s=>s.T.bb));
+    const sweep=(target)=>{   // nodes that can still reach `target` (all nodes when target is null); their cached values go stale
+      const seen=++SEEST,list=[];
+      const f=nd=>{if(nd.as===seen) return nd.ar;let r=target===null||nd===target;if(nd.ed) for(const e of nd.ed) if(f(e.nb)) r=true;nd.as=seen;nd.ar=r;if(r) list.push(nd);return r;};
+      f(root);return list;
+    };
+    sweep(null).forEach(nd=>{nd.mm=null;});S.setA(cur);
+    for(const s of shapes.slice().sort((a,b)=>a.w-b.w)){
+      if(performance.now()-t0>8000){exact=false;break;}
+      const tg=s.T.bb,anc=sweep(tg);
+      cur.delete(tg);S.setA(cur);anc.forEach(nd=>{nd.mm=null;});
+      const v=yield* total();
+      if(v<Vf-1e-9){cur.add(tg);S.setA(cur);anc.forEach(nd=>{nd.mm=null;});}
+    }
+  }
+  const mgW=new Map();
+  if(cur) yield* walk({leaf(nd,obs,i,hi,pw){mgW.set(nd,(mgW.get(nd)||0)+pw);}});
+  else mgW.set(shapes[0].T.bb,shapes[0].w);
+  const inA=shapes.filter(s=>!cur||cur.has(s.T.bb)).sort((a,b)=>(mgW.get(b.T.bb)||0)-(mgW.get(a.T.bb)||0)||b.sp-a.sp);
+  inA.forEach((s,k)=>{s.mn=k+1;s.mg=mgW.get(s.T.bb)||0;});
+  o.minimal=inA.map(s=>({idx:s.idx,gain:s.mg}));o.minTotal=Vf;o.minCov=Math.min(1,inA.reduce((a,s)=>a+s.mg,0));o.minExact=true;
+  o.seeRes.minLimit=!exact;
+}
+// seconds spent in each phase so far: [scan, cull, place, orders, check]
+function passTimes(o){
+  const n=performance.now(),t=o.tp||[],r=[];
+  for(let i=0;i<5;i++){
+    const a=t[i];if(a==null){r.push(null);continue;}
+    let b=t.slice(i+1).find(v=>v!=null);if(b==null) b=o.ph==='done'?(o.tEnd||n):n;
+    r.push((b-a)/1000);
+  }
+  return r;
+}
+// Plain-data copy of the current result (safe to post from a Worker)
+function snapshot(o){
+  const shapes=(o.shapes||[]).map(s=>({w:s.w,sp:s.sp,q:s.q,n:s.n,steps:s.steps,pic:s.T.p.map(q=>({t:q.t,cells:q.cells})),mn:s.mn||0,mg:s.mg||0,sv:s.sv||[]}));
+  return {pt:passTimes(o),shapes,okW:o.okW||0,okN:o.okN||0,doneW:o.doneW||0,seqDone:o.seqDone||0,minN:o.minimal?o.minimal.length:0,minTot:o.minTotal||0,minCov:o.minCov||0,minExact:o.minExact!==false,minSkipped:false,tot:o.seqsN||0,probOnly:!!o.probOnly,ns:(o.ns||[]).slice(),err:o.err,errN:o.errN||0,lo:o.lo||null,grp:o.grp||null,fail:o.fail||null,solN:o.solN||0,see:o.seeRes||null,capped:!!o.capped,solOnly:!!o.solOnly&&o.see==null};
+}
+
+//LOGIC_END
+
+// Queue syntax. A group "[ ... ]" holds elements (single pieces or nested groups) separated freely by spaces.
+//   [IOT]      pick 1 at random (1/3 each)      [IOT]!    all elements, random order
+//   [IOTS]2    pick 2, written order            [IOTS]2!  pick 2, random order   (number first, then !)
+//   [[SZ]! [LJ]!]2!   both sub-groups (each internally random), in random order
+function parseQ(s){
+  s=s.toUpperCase();let i=0;
+  const fail=m=>{throw new Error(m);};
+  function mods(){
+    let d='',bang=false,isBag=false,hasB=false,hasP=false;
+    while(/[0-9]/.test(s[i]||'')) d+=s[i++];
+    while((s[i]==='!'&&!hasB)||(s[i]==='%'&&!hasP)){bang=true;if(s[i]==='%'){isBag=true;hasP=true;}else hasB=true;i++;}   // ! and % may be combined (!% or %!), each once
+    if(/[0-9]/.test(s[i]||'')) fail(L('숫자는 !·%보다 앞에 써야 합니다. 예: [IOTSZJL]3!','A number must come before ! or %. e.g. [IOTSZJL]3!'));
+    if(d&&+d<1) fail(L('뽑는 개수는 1 이상이어야 합니다.','The pick count must be at least 1.'));
+    return {k:d?+d:null,r:bang,b:isBag};
+  }
+  function list(close){
+    const els=[];
+    while(i<s.length){
+      const ch=s[i];
+      if(ch===']'){ if(!close) fail(L('짝이 없는 ] 가 있습니다.','There is an unmatched ].')); return els; }
+      i++;
+      if(ch==='['){
+        const g=list(true);
+        if(s[i]!==']') fail(L('닫히지 않은 [ 가 있습니다.','There is an unclosed [.'));
+        i++;
+        const m=mods();
+        if(g.length){const is7=g.length===7&&g.every(e=>e.c)&&new Set(g.map(e=>e.c)).size===7;   // [IOTSZJL] (any order) is the same as []: with ! it is a 7-bag
+          els.push({g,k:m.k===null?(m.r?g.length:1):m.k,r:m.r,b:(is7&&m.r)?!m.b:m.b});}
+        else{
+          // [] with nothing inside stands for all seven pieces. Plain [] (or []3) is an ordinary group: [] picks 1 of the 7 at random, []3 picks 3 in written order.
+          // With ! it is a 7-bag ([]! = [IOTSZJL]!: random order, no repeats; []3! keeps the first 3); a % releases the bag ([]%, []!%, []3%): same random order, no leftover-bag report
+          const bag='IOTSZJL'.split('').map(c=>({c}));
+          if(m.r) els.push({g:bag,k:m.k===null?7:m.k,r:true,b:!m.b});
+          else els.push({g:bag,k:m.k===null?1:m.k,r:false,b:false});
+        }
+      }
+      else if('IOTSZJL'.includes(ch)) els.push({c:ch});
+      else if(/[0-9!%]/.test(ch)) fail(L('숫자와 !, %는 ] 바로 뒤에만 쓸 수 있습니다. 예: [IOTSZJL]3!','A number, ! or % may only follow ]. e.g. [IOTSZJL]3!'));
+    }
+    if(close) fail(L('닫히지 않은 [ 가 있습니다.','There is an unclosed [.'));
+    return els;
+  }
+  return list(false);
+}
+// Every distinct sequence a node can produce, with its probability.
+// Each choice of element indices is equally likely; duplicates are merged exactly.
+function nodeOptions(n){
+  if(n.opts) return n.opts;   // parallel partition: a pre-filtered option list
+  if(n.c) return [{q:[n.c],w:1}];
+  const eo=n.g.map(nodeOptions), m=n.g.length, k=Math.min(n.k,m);
+  const acc=new Map(), used=Array(m).fill(false);let total=0;
+  function emit(idxs){
+    let combos=[{q:[],w:1}];
+    for(const i of idxs){
+      const nx=[];
+      for(const c of combos) for(const o of eo[i]) nx.push({q:c.q.concat(o.q),w:c.w*o.w});
+      combos=nx;
+    }
+    for(const c of combos){const key=c.q.join('');acc.set(key,(acc.get(key)||0)+c.w);}
+    total++;
+  }
+  (function rec(start,cur){
+    if(cur.length===k){emit(cur);return;}
+    if(n.r){for(let i=0;i<m;i++){if(used[i])continue;used[i]=true;rec(0,cur.concat(i));used[i]=false;}}
+    else for(let i=start;i<=m-(k-cur.length);i++) rec(i+1,cur.concat(i));
+  })(0,[]);
+  return [...acc].map(([s,w])=>({q:s.split(''),w:w/total}));
+}
+// All orderings are generated on demand (mixed-radix index), so any number of combinations is allowed.
+// Upper bound on how many distinct sequences one top-level item can produce, computed WITHOUT enumerating them
+// (so something like [[][][][][][][][][]]! is refused up front instead of freezing the page)
+const MAX_ITEM_OPTS=Infinity;   // no limit on the options of one group (memory is the only limit)
+function estOptions(n){
+  if(n.opts) return n.opts.length;
+  if(n.c) return 1;
+  const m=n.g.length,k=Math.min(n.k,m);
+  const ch=n.g.map(estOptions).sort((a,b)=>b-a);
+  let prod=1;for(let i=0;i<k;i++) prod*=ch[i];
+  let sets=1;
+  if(n.r){for(let i=0;i<k;i++) sets*=(m-i);}
+  else{for(let i=0;i<k;i++) sets=sets*(m-i)/(i+1);}
+  return sets*prod;
+}
+function buildSeqs(items){
+  for(const it of items){
+    const e=estOptions(it);
+    if(e>MAX_ITEM_OPTS) throw new Error(L(
+      `경고: 이 묶음은 경우의 수가 너무 많아(약 ${e>=1e15?'10^15가지 이상':Math.round(e).toLocaleString()+'가지'}) 탐색하지 않습니다. 묶음 안의 묶음을 줄이거나 고정된 피스를 쓰세요.`,
+      `Warning: this group has too many possible orders (about ${e>=1e15?'10^15+':Math.round(e).toLocaleString()}), so it won't be searched. Use fewer nested groups or fixed pieces.`));
+  }
+  // bag items (top-level []! or ...%) made only of single pieces carry their element list, so the search can tell what is left in the bag after the PC
+  const bagElems=it=>it.b&&it.g&&it.g.every(e=>e.c)?it.g.map(e=>e.c).sort().join(''):null;
+  return makeSeqs(items.map(nodeOptions),items.map(bagElems));
+}
+function makeSeqs(ps,meta){
+  let n=1;
+  for(const p of ps) n*=p.length;
+  const len=ps.reduce((a,p)=>a+p[0].q.length,0);
+  const pn=ps.map(p=>p.map(o=>({qn:o.q.map(c=>TYPES.indexOf(c)),w:o.w})));
+  const off=[];{let a=0;for(const p of ps){off.push(a);a+=p[0].q.length;}}
+  const cho=new Array(ps.length);
+  const bags=[];{let a=0;ps.forEach((p,i)=>{const l=p[0].q.length;if(meta&&meta[i]) bags.push({off:a,len:l,elems:meta[i]});a+=l;});}
+  return {n,len,bags,parts:ps,
+  // The search only ever looks at the first m pieces of a queue, so queues that agree on those m pieces are one case.
+  // Drops everything after piece m and merges the options of the item that straddles the cut (weights add up).
+  truncate(m){
+    if(m>=len) return this;
+    const nps=[],nmeta=[];let a=0;
+    for(let i=0;i<ps.length&&a<m;i++){
+      const l=ps[i][0].q.length;
+      if(a+l<=m){nps.push(ps[i]);nmeta.push(meta?meta[i]:null);a+=l;continue;}
+      const r=m-a,mp=new Map();
+      for(const o of ps[i]){const key=o.q.slice(0,r).join('');mp.set(key,(mp.get(key)||0)+o.w);}
+      nps.push([...mp].map(([k,w])=>({q:k.split(''),w})));nmeta.push(meta?meta[i]:null);a=m;
+    }
+    return makeSeqs(nps,nmeta);
+  },
+  // writes queue number k into buf (piece indexes into TYPES) and returns its probability weight (same product order as at())
+  fill(k,buf){
+    for(let i=ps.length-1;i>=0;i--){
+      const lst=pn[i],r=k%lst.length;k=(k-r)/lst.length;
+      const o=lst[r];cho[i]=o;const qn=o.qn,b=off[i];
+      for(let j=0;j<qn.length;j++) buf[b+j]=qn[j];
+    }
+    let w=1;for(let i=0;i<ps.length;i++) w*=cho[i].w;
+    return w;
+  },
+  at(k){
+    const idx=Array(ps.length);let w=1;
+    for(let i=ps.length-1;i>=0;i--){idx[i]=k%ps[i].length;k=Math.floor(k/ps[i].length);}
+    const q=[];ps.forEach((p,i)=>{q.push(...p[idx[i]].q);w*=p[idx[i]].w;});
+    return {q,w};
+  }};
+}
+//ENGINE_END
+
+const $=id=>document.getElementById(id);
+const ed=$('ed'), vw=$('vw');
+let H=4, board=[], gen=null, running=false, sols=[], cur=null, step=0, timer=null;
+let tint=[], curColor='G';   // tint: cosmetic colour per filled cell (does not affect the search)
+const resetBoard=()=>{board=Array.from({length:H},()=>Array(COLS).fill(0));tint=Array.from({length:H},()=>Array(COLS).fill(null));drawEd();};
+function size(cv){cv.width=COLS*CELL;cv.height=H*CELL;}
+function cell(c,x,y,color,a){
+  c.globalAlpha=a||1;c.fillStyle=color;c.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);
+  c.fillStyle='rgba(255,255,255,.22)';c.fillRect(x*CELL+1,y*CELL+1,CELL-2,4);c.globalAlpha=1;
+}
+function grid(c){
+  c.clearRect(0,0,COLS*CELL,H*CELL);c.strokeStyle='#161b3a';c.lineWidth=1;c.beginPath();
+  for(let i=0;i<=COLS;i++){c.moveTo(i*CELL+.5,0);c.lineTo(i*CELL+.5,H*CELL);}
+  for(let j=0;j<=H;j++){c.moveTo(0,j*CELL+.5);c.lineTo(COLS*CELL,j*CELL+.5);}
+  c.stroke();
+}
+function drawEd(){
+  size(ed);const c=ed.getContext('2d');grid(c);
+  board.forEach((r,y)=>r.forEach((v,x)=>v&&cell(c,x,y,(tint[y]&&tint[y][x])||COLORS.G)));
+}
+let paint=null;
+function pos(e){const b=ed.getBoundingClientRect();return[Math.floor((e.clientX-b.left)/b.width*COLS),Math.floor((e.clientY-b.top)/b.height*H)];}
+function paintAt(e){const[x,y]=pos(e);if(x<0||y<0||x>=COLS||y>=H)return;const col=COLORS[curColor];if(paint===null)paint=(board[y][x]&&((tint[y][x]||COLORS.G)===col))?0:1;board[y][x]=paint;tint[y][x]=paint?(curColor==='G'?null:col):null;drawEd();}
+ed.addEventListener('pointerdown',e=>{paint=null;ed.setPointerCapture(e.pointerId);paintAt(e);});
+ed.addEventListener('pointermove',e=>{if(e.buttons)paintAt(e);});
+(function(){const pal=$('pal');['G','I','O','T','S','Z','J','L'].forEach(k=>{const b=document.createElement('button');b.type='button';b.className='sw'+(k===curColor?' on':'');b.style.background=COLORS[k];b.setAttribute('aria-label',k==='G'?'회색':k);b.onclick=()=>{curColor=k;pal.querySelectorAll('.sw').forEach(x=>x.classList.toggle('on',x===b));};pal.appendChild(b);});})();
+ed.addEventListener('pointerup',()=>restoreSaved());
+ed.addEventListener('pointercancel',()=>restoreSaved());
+const setH=v=>{v=Math.max(2,Math.min(12,Math.round(+v)||4));if(running){$('hh').value=H;return;}$('hh').value=v;if(v!==H){H=v;resetBoard();}$('hint6').style.display=H>MAXL?'':'none';};
+$('hh').onchange=e=>{setH(e.target.value);restoreSaved();};
+$('hm').onclick=()=>{setH(H-1);restoreSaved();};
+$('hp').onclick=()=>{setH(H+1);restoreSaved();};
+$('clr').onclick=()=>{resetBoard();restoreSaved();};
+$('rnd').onclick=()=>{
+  const bag=()=>'IOTSZJL'.split('').sort(()=>Math.random()-.5);
+  $('q').value=bag().concat(bag()).join('');
+};
+$('rnd').click();
+
+const st=(t,k)=>{const s=$('status');s.textContent=t;s.className=k||'';};
+function toRows(){
+  const rows=Array(H+BUF).fill(0);
+  board.forEach((r,y)=>r.forEach((v,x)=>{if(v)rows[BUF+y]|=1<<x;}));
+  return rows;
+}
+function stopRun(){running=false;$('go').style.display='';$('stop').style.display='none';}
+const fmtT=v=>v.toFixed(1);
+const PHN=[['scan','scan'],['cull','cull'],['place','place'],['지원 큐','supporting queues'],['큐 확인','queue check']];
+const ptK=R=>{if(!R||!R.pt) return '';const a=R.pt.map((v,i)=>v==null?null:PHN[i][0]+' '+fmtT(v)+'초').filter(Boolean);return a.length?` (${a.join(' · ')})`:'';};
+const ptE=R=>{if(!R||!R.pt) return '';const a=R.pt.map((v,i)=>v==null?null:PHN[i][1]+' '+fmtT(v)+'s').filter(Boolean);return a.length?` (${a.join(' · ')})`:'';};
+let runT0=0;   // start of the current search (for the elapsed time in the status line)
+let lastSeeOff=2;   // See counts current piece + hold + next: next-count = See - (hold ? 2 : 1)
+const seeOff=()=>$('uh').checked?2:1;
+const pct=x=>{if(x>=1-1e-9) return '100%';const p=x*100;let d=2;while(d<8&&(p.toFixed(d)==='100.'+'0'.repeat(d)||(p>0&&+p.toFixed(d)===0))) d++;return p.toFixed(d)+'%';};   // never round a non-certain result up to 100% (or down to 0%)
+let shapes=[],multi=false,curQ='',total=0,effLen=0,stopHandler=null,W=null,wAlive=false,wFail=false;
+$('stop').onclick=()=>{if(stopHandler) stopHandler();};
+const PROG={scan:['1/3단계 scan: 피스를 한 개씩 놓아 보드를 넓힙니다','Stage 1/3 scan: placing pieces one at a time'],cull:['2/3단계 cull: PC로 이어지지 않는 보드를 지웁니다','Stage 2/3 cull: dropping boards that cannot reach a PC'],place:['3/3단계 place: 남은 보드로 해법을 만듭니다','Stage 3/3 place: building the solutions'],orders:['해법별 지원 큐 계산','Finding the supporting queues of each solution'],eval:['넥스트별 성공 여부 확인','Checking every queue']};
+const progText=(p)=>{
+  const ph=PROG[p.ph]||['준비 중','Preparing'];
+  const d=(p.ph==='scan'||p.ph==='place')?[` · ${p.si||0}/${p.sn||0}피스 · 보드 ${(p.boards||0).toLocaleString()}개`,` · piece ${p.si||0}/${p.sn||0} · ${(p.boards||0).toLocaleString()} boards`]
+    :p.ph==='orders'?[` · ${p.si||0}/${p.sn||0}`,` · ${p.si||0}/${p.sn||0}`]
+    :p.ph==='eval'?[` · 순서 ${(p.seqDone||0).toLocaleString()}/${(p.tot||total).toLocaleString()}`,` · order ${(p.seqDone||0).toLocaleString()}/${(p.tot||total).toLocaleString()}`]:['',''];
+  const f=[` · 해법 후보 ${(p.sols||0).toLocaleString()}개`,` · ${(p.sols||0).toLocaleString()} solutions`];
+  const el=((performance.now()-runT0)/1000).toFixed(1);
+  return L(`탐색 중… ${p.curN||''}피스 · ${ph[0]}${d[0]}${p.sols?f[0]:''} · ${el}초`,`Searching… ${p.curN||''}-piece · ${ph[1]}${d[1]}${p.sols?f[1]:''} · ${el}s`);
+};
+// Result of a run (a plain snapshot object, from the Worker or from the main-thread fallback)
+function finishRun(R,stopped,sec){
+  stopRun();stopHandler=null;pending=null;
+  if(R.err==='TOO_MANY') return st(L(
+    `경고: 확인해야 할 경우의 수가 ${R.errN.toLocaleString()}가지로 너무 많아 탐색하지 않습니다. (한도 ${MAX_CASES.toLocaleString()}가지) 넥스트를 줄이거나 [ ] 대신 고정된 피스를 쓰세요.`,
+    `Warning: ${R.errN.toLocaleString()} cases to check is too many, so the search was not run (limit ${MAX_CASES.toLocaleString()}). Shorten the queue or use fixed pieces instead of [ ] groups.`
+  ),'bad');
+  if(R.err==='TOO_BIG') return st(L(
+    `경고: 한 단계의 보드가 ${R.errN.toLocaleString()}개를 넘어 탐색을 멈췄습니다. (한도 ${MAX_BOARDS.toLocaleString()}개) 높이를 줄이거나 넥스트를 더 고정하세요.`,
+    `Warning: one stage grew past ${R.errN.toLocaleString()} boards, so the search stopped (limit ${MAX_BOARDS.toLocaleString()}). Use a lower board or a more fixed queue.`
+  ),'bad');
+  if(R.err) return st(R.err,'bad');
+  if(stopped){st(L('중지했습니다. (탐색이 끝나기 전에는 결과를 보여주지 않습니다)','Stopped. (results are only shown once the search has finished)'));return;}
+  const ns=R.ns.slice().sort((a,b)=>a-b).join('·');
+  if(R.see){
+    const sp=R.see.p,N=R.see.N;
+    const base=L(`See ${N+lastSeeOff}: ${ns}피스 PC 성공 확률 ${pct(sp)} (보이는 넥스트 ${N}개 안에서 최선 선택)`,`See ${N+lastSeeOff}: ${ns}-piece PC success ${pct(sp)} (best play with ${N} visible next)`);
+    if(R.probOnly||!R.shapes.length){
+      st(base+` · ${sec.toFixed(1)}${L('초','s')}${R.capped?L(' · 조건이 커서 메모리 보호를 위해 확률만 계산했어요(해 목록·실패 큐 없음)',' · too large for the full analysis, so only the probability was computed (no solutions / failing queues)'):R.probOnly?L(' · 확률만 계산(해 목록·실패 큐 없음)',' · probability only (no solutions / failing queues)'):''}`,sp>0?'ok':'bad');
+      if(R.fail) renderFail(R,$('fq2'));return;
+    }
+    st(base+L(` · 서로 다른 모양 ${R.shapes.length}개 · ${sec.toFixed(1)}초${ptK(R)}`,` · ${R.shapes.length} distinct shapes · ${sec.toFixed(1)}s${ptE(R)}`),'ok');
+    showSols(R);saveResult(R);return;
+  }
+  if(R.solOnly&&R.shapes.length){
+    st(L(`${ns}피스 · 해법 ${R.shapes.length}개 · ${sec.toFixed(1)}초${ptK(R)} · 해법만 표시 (확률·실패 큐는 계산하지 않음)`,`${ns}-piece · ${R.shapes.length} solutions · ${sec.toFixed(1)}s${ptE(R)} · solutions only (probabilities and failing queues are not calculated)`),'ok');
+    showSols(R);saveResult(R);return;
+  }
+  if(R.probOnly&&R.okW){
+    st(L(
+      `${ns}피스 PC 성공 확률 ${pct(R.okW/R.doneW)} (순서 ${R.seqDone}가지 중 ${R.okN}가지) · 해법 후보 ${R.solN.toLocaleString()}개 · ${sec.toFixed(1)}초${ptK(R)} · 확률만 계산(해 목록 없음)`,
+      `${ns}-piece PC success ${pct(R.okW/R.doneW)} (${R.okN}/${R.seqDone} orders) · ${R.solN.toLocaleString()} candidate solutions · ${sec.toFixed(1)}s${ptE(R)} · probability only (no solution list)`
+    ),'ok');
+    renderFail(R,$('fq2'));
+    return;
+  }
+  if(R.shapes.length){
+    st(L(
+      `${ns}피스 PC 성공 확률 ${pct(R.okW/R.doneW)} (순서 ${R.seqDone}가지 중 ${R.okN}가지) · 서로 다른 모양 ${R.shapes.length}개 · ${sec.toFixed(1)}초${ptK(R)}`,
+      `${ns}-piece PC success ${pct(R.okW/R.doneW)} (${R.okN}/${R.seqDone} orders) · ${R.shapes.length} distinct shapes · ${sec.toFixed(1)}s${ptE(R)}`
+    ),'ok');
+    showSols(R);saveResult(R);
+  } else{st(L(`해가 없습니다. 넥스트를 늘리거나 홀드·스핀·180°를 켜보세요. (${sec.toFixed(1)}초${ptK(R)})`,`No solution. Try a longer next queue, or enable hold/spin/180°. (${sec.toFixed(1)}s${ptE(R)})`),'bad');}
+}
+// The search runs in a Web Worker built from this page's own engine code (ENGINE_START..ENGINE_END),
+// so the page stays responsive and the search gets the whole thread. Falls back to the main thread if Workers are unavailable.
+function workerMain(){
+  let o=null,gen=null,stopFlag=false,T0=0;
+  const post=m=>self.postMessage(m);
+  function finish(stopped){
+    try{post({type:'done',stopped,snap:snapshot(o),sec:(performance.now()-T0)/1000});}
+    catch(err){post({type:'err',msg:String(err&&err.message||err)});}
+    o=null;gen=null;
+  }
+  function step(){
+    if(!o) return;
+    if(stopFlag) return finish(true);
+    try{
+      const s=performance.now();let done=false;
+      while(performance.now()-s<60){if(gen.next().done){done=true;break;}}
+      if(done) return finish(false);
+      post({type:'p',pt:passTimes(o),tot:o.seqsN||0,ph:o.ph,si:o.si,sn:o.sn,boards:o.boards,curN:o.curN,seqDone:o.seqDone,sols:o.solN||0});
+      setTimeout(step,0);
+    }catch(err){post({type:'err',msg:String(err&&err.message||err)});o=null;gen=null;}
+  }
+  self.onmessage=e=>{
+    const m=e.data;
+    if(m.type==='stop'){stopFlag=true;return;}
+    if(m.type!=='run') return;
+    try{
+      const items=parseQ(m.q);
+      if(m.firsts){const it=items[0];it.opts=nodeOptions(it).filter(x=>m.firsts.includes(x.q[0]));}
+      const seqs=buildSeqs(items);
+      o={rows0:m.rows0,seqs,items,firsts:m.firsts||null,useHold:m.useHold,u180:m.u180,spin:m.spin,H:m.H,probOnly:m.probOnly,solOnly:m.solOnly,see:m.see,nodes:0,curN:0,seqDone:0};
+      gen=search(o);stopFlag=false;T0=performance.now();
+      setTimeout(step,0);
+    }catch(err){post({type:'err',msg:String(err&&err.message||err)});o=null;gen=null;}
+  };
+  post({type:'ready'});
+}
+let wURL=null;
+function workerURL(){
+  if(wURL) return wURL;
+  const src=document.getElementById('app').textContent;
+  const a=src.indexOf('//ENGINE'+'_START'), b=src.indexOf('//ENGINE'+'_END');
+  if(a<0||b<0) throw new Error('engine');
+  const code='"use strict";\nconst L=(ko,en)=>en;\n'+src.slice(a,b)+'\n('+workerMain.toString()+')();';
+  return wURL=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
+}
+function makeWorker(){
+  if(W||wFail) return W;
+  try{
+    W=new Worker(workerURL());
+    W.onmessage=e=>{
+      wAlive=true;const m=e.data;
+      if(m.type==='p'){if(running) st(progText(m));}
+      else if(m.type==='done') finishRun(m.snap,m.stopped,m.sec);
+      else if(m.type==='err'){stopRun();stopHandler=null;pending=null;st(m.msg,'bad');}
+    };
+    W.onerror=ev=>{
+      // a Worker that never started (blocked / unsupported): drop it and let the pending run continue on the main thread
+      if(!wAlive){wFail=true;try{W.terminate();}catch(_){}W=null;if(pending){const p=pending;pending=null;runMain(p.P,p.seqs);}}
+      else{stopRun();stopHandler=null;st(L('탐색 중 오류가 발생했습니다.','An error occurred during the search.'),'bad');}
+      if(ev&&ev.preventDefault) ev.preventDefault();
+    };
+  }catch(err){wFail=true;W=null;}
+  return W;
+}
+let pending=null,curO=null;
+// ---- parallel run: the queues are split by their first piece (each part searches only the queues that start with its pieces), then the snapshots are merged
+function mergeSnaps(S){
+  if(S.length===1) return S[0];
+  const bad=S.find(x=>x.err);if(bad) return bad;
+  const R={...S[0]};
+  R.pt=[0,1,2,3,4].map(i=>{const v=S.map(x=>x.pt&&x.pt[i]).filter(x=>x!=null);return v.length?Math.max(...v):null;});
+  for(const k of ['okW','okN','doneW','seqDone','tot','solN']) R[k]=S.reduce((a,x)=>a+(x[k]||0),0);
+  R.ns=[...new Set(S.flatMap(x=>x.ns||[]))].sort((a,b)=>a-b);
+  const key=sh=>sh.pic.map(p=>p.t+p.cells.map(c=>c.join(':')).sort().join(',')).sort().join('|');
+  const gmap=new Map(),shapes=[],loc=[];
+  for(const x of S){
+    const m=[];
+    (x.shapes||[]).forEach((sh,i)=>{
+      const k=key(sh);let g=gmap.get(k);
+      if(g===undefined){g=shapes.length;gmap.set(k,g);shapes.push({...sh,mn:0,mg:0});}
+      else shapes[g].w+=sh.w;
+      m[i]=g;
+    });
+    loc.push(m);
+  }
+  R.shapes=shapes;
+  const gl=[];
+  S.forEach((x,xi)=>{if(x.grp) for(const [es,w] of x.grp) gl.push([es.map(i=>loc[xi][i]),w]);});
+  R.grp=gl.length?gl:null;
+  R.minN=0;R.minTot=0;R.minCov=0;
+  R.minExact=true;
+  if(gl.length){
+    const r=minCover(gl,i=>i===null?-1:shapes[i].sp,4000);
+    r.picks.forEach((p,i)=>{shapes[p.idx].mn=i+1;shapes[p.idx].mg=p.gain;});
+    R.minN=r.picks.length;R.minTot=r.total;R.minCov=r.covered;R.minExact=r.exact;
+  }
+  const los=S.map(x=>x.lo).filter(Boolean);
+  if(los.length){
+    const sets=new Map(),marg={};let okw=0,noinfo=0;
+    for(const l of los){
+      for(const [k,w] of l.sets) sets.set(k,(sets.get(k)||0)+w);
+      for(const c in l.marg) marg[c]=(marg[c]||0)+l.marg[c];
+      okw+=l.okw;noinfo+=l.noinfo||0;
+    }
+    R.lo={sets:[...sets],marg,okw,noinfo};
+  } else R.lo=null;
+  const fs=S.map(x=>x.fail).filter(Boolean);
+  if(fs.length){
+    const list=[];let n=0,w=0;
+    for(const f of fs){n+=f.n;w+=f.w;for(const it of f.list) list.push(it);}
+    R.fail={n,w,list,cap:false};
+  } else R.fail=null;
+  return R;
+}
+function runParallel(P,seqs,parts){
+  let ws;
+  try{const u=workerURL();ws=parts.map(()=>new Worker(u));}catch(_){return false;}
+  pending=null;
+  const prog=new Array(ws.length).fill(null),snaps=[],secs=[],ORD=['scan','cull','place','orders','eval'];
+  let finished=0,stoppedAny=false,dead=false;
+  const killAll=()=>ws.forEach(w=>{try{w.terminate();}catch(_){}});
+  const fail=msg=>{if(dead) return;dead=true;killAll();stopRun();stopHandler=null;st(msg,'bad');};
+  stopHandler=()=>{$('stop').textContent=L('중지 중…','Stopping…');ws.forEach(w=>w.postMessage({type:'stop'}));};
+  ws.forEach((w,i)=>{
+    w.onmessage=e=>{
+      const m=e.data;
+      if(m.type==='p'){
+        prog[i]=m;
+        if(!running||dead) return;
+        const ps=prog.filter(Boolean),sum=k=>ps.reduce((a,x)=>a+(x[k]||0),0);
+        const base=ps.reduce((a,b)=>ORD.indexOf(b.ph)<ORD.indexOf(a.ph)?b:a);
+        st(progText({...base,boards:sum('boards'),seqDone:sum('seqDone'),sols:sum('sols'),tot:sum('tot')})+L(` · ${ws.length}개 병렬`,` · ${ws.length} parallel`));
+      }
+      else if(m.type==='done'){
+        snaps[i]=m.snap;secs[i]=m.sec;if(m.stopped) stoppedAny=true;
+        if(++finished===ws.length&&!dead){killAll();finishRun(stoppedAny?snaps[0]:mergeSnaps(snaps),stoppedAny,Math.max(...secs));}
+      }
+      else if(m.type==='err') fail(m.msg);
+    };
+    w.onerror=ev=>{fail(L('탐색 중 오류가 발생했습니다.','An error occurred during the search.'));if(ev&&ev.preventDefault) ev.preventDefault();};
+    w.postMessage({type:'run',...P,firsts:parts[i]});
+  });
+  return true;
+}
+function runWorker(P,seqs){
+  const w=makeWorker();if(!w) return false;
+  pending={P,seqs};
+  stopHandler=()=>{$('stop').textContent=L('중지 중…','Stopping…');w.postMessage({type:'stop'});};
+  w.postMessage({type:'run',...P});
+  return true;
+}
+// Fallback: same search, driven in small time slices on the main thread
+function runMain(P,seqs){
+  pending=null;
+  const o={rows0:P.rows0,seqs,items:parseQ(P.q),useHold:P.useHold,u180:P.u180,spin:P.spin,H:P.H,probOnly:P.probOnly,solOnly:P.solOnly,see:P.see,nodes:0,curN:0,seqDone:0};
+  curO=o;gen=search(o);running=true;$('go').style.display='none';$('stop').style.display='';
+  const t0=performance.now();
+  stopHandler=()=>{stopRun();const R=snapshot(o);stopHandler=null;finishRun(R,true,0);};
+  (function tick(){
+    if(!running) return;
+    const s=performance.now();let done=false;
+    while(performance.now()-s<14){if(gen.next().done){done=true;break;}}
+    if(done){finishRun(snapshot(o),false,(performance.now()-t0)/1000);return;}
+    st(progText({...o,sols:o.solN||0,pt:passTimes(o),tot:o.seqsN||0}));
+    setTimeout(tick,0);
+  })();
+}
+$('go').onclick=()=>{
+  stopMx();minOnly=false;
+  let seqs;
+  try{seqs=buildSeqs(parseQ($('q').value));}catch(e){return st(e.message,'bad');}
+  if(!seqs.len) return st(L('넥스트를 입력하세요. (I O T S Z J L, [ ] 안은 순서 무관)','Enter a next queue. (I O T S Z J L, [ ] for any order)'),'bad');
+  const rows0=toRows();
+  const f=rows0.reduce((a,v)=>a+popc(v),0);
+  if(f%2) return st(L('블록 수가 홀수라 퍼펙트 클리어가 불가능합니다. (4n + 채운 칸 = 10의 배수여야 해요)','An odd cell count can\'t perfect clear. (4n + filled cells must be a multiple of 10)'),'bad');
+  // only the first pieces that can affect the PC matter (hold on: n+1): cut the queue now so every shown count is the real one
+  {let need=0;for(let n=1;n<=seqs.len;n++) if((f+4*n)%10===0&&(f+4*n)/10===Math.min(H,MAXL)) need=Math.max(need,Math.min($('uh').checked?n+1:n,seqs.len));
+   seqs=seqs.truncate(need);effLen=need;}
+  runT0=performance.now();runKey=boardKey();$('res').style.display='none';$('fq2').style.display='none';$('fmbox').style.display='none';multi=seqs.n>1;total=seqs.n;lastRows0=rows0.slice();
+  const P={q:$('q').value,rows0,hold0:'',useHold:$('uh').checked,u180:$('u180').checked,spin:$('usp').checked,H,probOnly:$('po').checked,solOnly:$('so').checked,see:$('see').value===''?null:Math.max(0,(Math.floor(+$('see').value)||0)-(lastSeeOff=seeOff()))};
+  // See large enough that every piece the PC can use is visible (current + N next >= pieces needed): plain full calculation, no See machinery
+  if(P.see!=null&&P.see+1>=effLen) P.see=null;
+  running=true;$('go').style.display='none';$('stop').style.display='';$('stop').textContent=L('중지','Stop');
+  st(L(`탐색 준비 중… (앞 ${effLen}피스 기준 ${seqs.n.toLocaleString()}가지)`,`Preparing… (first ${effLen} pieces, ${seqs.n.toLocaleString()} cases)`));
+  if($('par')&&$('par').checked&&P.see==null){
+    try{
+      const fo=[...new Set(nodeOptions(parseQ($('q').value)[0]).map(o=>o.q[0]))].sort();
+      const K=Math.min(fo.length,Math.max(2,Math.min(4,navigator.hardwareConcurrency||2)));
+      if(fo.length>=2){const parts=Array.from({length:K},()=>'');fo.forEach((c,i)=>{parts[i%K]+=c;});if(runParallel(P,seqs,parts)) return;}
+    }catch(_){}
+  }
+  if(!runWorker(P,seqs)) runMain(P,seqs);
+};
+
+//FUMEN_START
+// Fumen (v115) export: one page per solution, field = the finished stack coloured by piece, comment = "success % : piece order".
+const FM_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const FM_COLOR={I:1,L:2,O:3,Z:4,T:5,J:6,S:7,X:8};
+function fumenEncode(pages){
+  const out=[];let prev=new Array(240).fill(0),prevComment='';
+  const push=(v,n)=>{for(let i=0;i<n;i++){out.push(FM_ALPHA[v%64]);v=Math.floor(v/64);}};
+  const emit=(pg,first)=>{
+    const esc=pg.comment==null?null:escape(pg.comment), changed=esc!==null&&esc!==prevComment;
+    push((first?30720:0)+(changed?61440:0),3);
+    if(changed){
+      push(esc.length,2);
+      for(let a=0;a<esc.length;a+=4){let v=0,m=1;for(let b=0;b<4;b++){v+=(a+b<esc.length?esc.charCodeAt(a+b)-32:0)*m;m*=96;}push(v,5);}
+      prevComment=esc;
+    }
+  };
+  pages.forEach((pg,i)=>{
+    const f=pg.field;let k=0;
+    if(f.every((v,j)=>v===prev[j])) push(8*240+239,2),push(0,1);   // field unchanged (no repeat pages)
+    else while(k<240){
+      const diff=f[k]-prev[k];let run=1;
+      while(k+run<240&&f[k+run]-prev[k+run]===diff) run++;
+      push((diff+8)*240+(run-1),2);k+=run;
+    }
+    emit(pg,i===0);
+    // the next page's field is stored as a difference from THIS field after its completed rows are cleared (rows 0..22; row 23 = garbage row, untouched)
+    const kept=[];for(let r=0;r<23;r++){const row=f.slice(r*10,r*10+10);if(!row.every(v=>v)) kept.push(row);}
+    const cleared=new Array(240).fill(0);
+    kept.forEach((row,j)=>{const r=23-kept.length+j;for(let x=0;x<10;x++) cleared[r*10+x]=row[x];});
+    for(let x=0;x<10;x++) cleared[230+x]=f[230+x];
+    prev=cleared;
+  });
+  return 'v115@'+out.join('');
+}
+// boardRows: rows0 of the searched board (BUF rows of padding on top), H rows tall, bottom row = last
+function fumenFromShapes(list,label,rows0,H,BUFROWS){
+  const pages=list.map(s=>{
+    const field=new Array(240).fill(0);
+    const set=(x,y,c)=>{const r=22-(H-1-y);if(r>=0&&r<=22&&x>=0&&x<10) field[r*10+x]=c;};   // y: 0 = top of the H-row board
+    for(let y=0;y<H;y++) for(let x=0;x<10;x++) if((rows0[BUFROWS+y]>>x)&1) set(x,y,FM_COLOR.X);
+    for(const q of s.pic) for(const [x,y] of q.cells) set(x,y,FM_COLOR[q.t]);
+    return {field,comment:label(s)+' : '+s.q};
+  });
+  return fumenEncode(pages);
+}
+// first page's field of a v115 code -> 240 cell values (row 0 = top ... row 22 = floor row, row 23 = garbage), or null
+function fumenFirstField(code){
+  const m=String(code).replace(/\s+/g,'').match(/[vV]115@([A-Za-z0-9+\/?]+)/);
+  if(!m) return null;
+  const s=m[1].replace(/\?/g,'');let p=0;
+  const pop=n=>{let v=0;for(let i=0;i<n;i++){const k=FM_ALPHA.indexOf(s[p++]);if(k<0) throw new Error('bad');v+=k*Math.pow(64,i);}return v;};
+  const f=new Array(240).fill(0);let idx=0;
+  while(idx<240){
+    const v=pop(2),diff=Math.floor(v/240)-8,run=v%240+1;
+    for(let k=0;k<run&&idx<240;k++) f[idx++]=diff;
+  }
+  return f;
+}
+//FUMEN_END
+let lastR=null,minOnly=false,lastRows0=null;
+// pressing a save (single piece or a whole leftover set) keeps only the solutions that can leave it
+let saveSel=[],saveR=null;
+// a save x (leftover pieces) matches a selected item: a whole set must be equal, a single piece must be contained
+const matchX=x=>saveSel.some(it=>it.t==='set'?x===it.k:x.indexOf(it.k)>=0);
+const saveMatch=s=>!saveSel.length||(s.sv||[]).some(matchX);
+// ---- 저장된 결과: 보드 모양·옵션이 같으면 큐를 바꿔도 마지막 결과를 그대로 다시 보여줌 ----
+const SAVED=new Map();
+const boardKey=()=>toRows().join()+'|'+H+'|'+$('uh').checked+'|'+$('u180').checked+'|'+$('usp').checked+'|'+$('po').checked+$('so').checked+'|'+$('q').value.replace(/\s+/g,'').toUpperCase()+'|'+$('see').value;
+let runKey=null;
+function saveResult(R){
+  if(runKey===null||R.probOnly||!R.shapes||!R.shapes.length) return;
+  SAVED.delete(runKey);SAVED.set(runKey,{R,rows0:lastRows0&&lastRows0.slice(),multi,total,effLen,statusText:$('status').textContent,statusCls:$('status').className});
+  if(SAVED.size>20) SAVED.delete(SAVED.keys().next().value);
+}
+function restoreSaved(){
+  if(running) return;
+  const e=SAVED.get(boardKey());
+  if(!e){ if(lastR&&lastKeyShown!==null&&lastKeyShown!==boardKey()){$('res').style.display='none';$('fq2').style.display='none';} return; }
+  if(lastKeyShown===boardKey()&&$('res').style.display==='') return;   // already showing it
+  minOnly=false;multi=e.multi;total=e.total;effLen=e.effLen;lastRows0=e.rows0;
+  st(e.statusText,e.statusCls);showSols(e.R);
+}
+let lastKeyShown=null;
+$('po').addEventListener('change',()=>{if($('po').checked) $('so').checked=false;});
+$('so').addEventListener('change',()=>{if($('so').checked) $('po').checked=false;});
+['uh','u180','usp','po','so'].forEach(id=>$(id).addEventListener('change',()=>restoreSaved()));
+// the "i" buttons fold/unfold the explanation text (the one named by data-t, else the hint inside the same panel)
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('button.ib');if(!b) return;
+  const t=b.dataset.t?$(b.dataset.t):(b.closest('.lo,#fq,#fq2')||document).querySelector('.hint.ex');
+  if(t) t.style.display=t.style.display==='none'?'':'none';
+});
+// a changed queue never recalls a saved result: hide the old one and wait for a fresh search
+$('q').addEventListener('input',()=>{if(running) return; if(lastKeyShown!==boardKey()){$('res').style.display='none';$('fq2').style.display='none';}});
+$('rnd').addEventListener('click',()=>restoreSaved());
+$('see').addEventListener('input',()=>{if(running) return;if(lastKeyShown!==boardKey()){$('res').style.display='none';$('fq2').style.display='none';}restoreSaved();});
+
+// save probabilities when only the minimal solutions may be used: a queue group can leave the saves of the minimal solutions it can use
+function loMin(R,lo0){
+  const sets=new Map(),marg={};
+  for(const [es,w] of R.grp){
+    const ks=new Set();
+    for(const k of es){const sh=R.shapes[k];if(!sh.mn) continue;for(const x of (sh.sv||[])) ks.add(x);}
+    const cs=new Set();
+    for(const x of ks){sets.set(x,(sets.get(x)||0)+w);for(const ch of x) cs.add(ch);}
+    for(const ch of cs) marg[ch]=(marg[ch]||0)+w;
+  }
+  return {sets:[...sets],marg,okw:lo0.okw,noinfo:lo0.noinfo};
+}
+function renderLo(R,el0){
+  const el=el0||$('lo'),lo0=R.lo;
+  if(!lo0||!lo0.okw){el.style.display='none';el.innerHTML='';return;}
+  const mm=minOnly&&R.grp&&R.minN,lo=mm?loMin(R,lo0):lo0;
+  const chip=c=>`<span class="pc" style="background:${COLORS[c]}">${c}</span>`;
+  const p=w=>pct(Math.min(1,w/lo.okw));
+  let h=`<h3>${L('PC 후 남는 bag 미노','Bag pieces left after the PC')}${mm?L(' · 최소 해법 기준',' · minimal solutions only'):''}<button type="button" class="ib" aria-label="설명">i</button></h3>`;
+  const sets=lo.sets.slice().sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).slice();
+  // single-piece probability: chance that this piece can be left over after the PC (same basis as the sets below)
+  const mg=Object.entries(lo.marg||{}).filter(([c,w])=>w>0&&COLORS[c]).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1));
+  const on=(t,k)=>saveSel.some(it=>it.t===t&&it.k===k)?' on':'';
+  if(mg.length) h+=`<div class="hint" style="margin:0 0 4px">${L('미노별 확률','Per piece')}</div><div class="m">`+mg.map(([c,w])=>`<button type="button" class="sv${on('one',c)}" data-t="one" data-k="${c}">${chip(c)} <b>${p(w)}</b></button>`).join('')+`</div><div class="hint" style="margin:0 0 4px">${L('조합별 확률','Per combination')}</div>`;
+  h+=`<div class="ls">`+sets.map(([k,w])=>`<button type="button" class="sv${on('set',k)}" data-t="set" data-k="${k}"><b>${p(w)}</b> ${k?k.split('').map(chip).join(''):L('없음 (bag을 다 씀)','none (bag used up)')}</button>`).join('')+'</div>';
+  if(saveSel.length){
+    // chance that at least one of the selected saves is possible = weight of the queues whose possible saves meet the selection (overlaps counted once)
+    let pu=0;for(const [es,w] of (R.grp||[])) if((mm?es.filter(k=>R.shapes[k].mn):es).some(k=>saveMatch(R.shapes[k]))) pu+=w;
+    const ns=R.shapes.filter(x=>saveMatch(x)&&(!mm||x.mn)).length;
+    h+=`<div class="hint" style="color:var(--mint);font-size:13px">${L(`선택 ${saveSel.length}개 중 하나라도: <b>${p(pu)}</b> · 해법 ${ns}개`,`Any of ${saveSel.length} selected: <b>${p(pu)}</b> · ${ns} solution(s)`)} <button type="button" class="sv" data-t="clr" style="padding:1px 8px">${L('선택 해제','Clear')}</button></div>`;
+  }
+  else h+=`<div class="hint">${L('세이브를 누르면 해당 해법만 표시됩니다. 여러 개 선택 가능.','Tap a save to filter solutions. Multi-select works.')}</div>`;
+  h+=`<div class="hint ex" style="display:none">`+L(
+    `PC 후 남는 미노(홀드 포함). 해가 여러 개면 각 조합에 중복 집계되어 합이 100%를 넘을 수 있습니다.${R.lim?' (해 제한 모드: 일부 조합 누락 가능)':''}${lo.noinfo?` bag 밖에서 끝난 ${p(lo.noinfo)}는 제외.`:''}`,
+    `Pieces left after the PC (incl. hold). Totals can exceed 100% since one queue may leave several sets.${R.lim?' (Limited mode: some sets may be missing.)':''}${lo.noinfo?` ${p(lo.noinfo)} ended outside a bag and is excluded.`:''}`
+  )+`</div>`;
+  const ls0=el.querySelector('.ls'),sc=ls0?ls0.scrollTop:0,ex0=el.querySelector('.hint.ex'),open=ex0&&ex0.style.display!=='none';
+  el.innerHTML=h;el.style.display='';
+  const ls1=el.querySelector('.ls');if(ls1) ls1.scrollTop=sc;
+  if(open){const e1=el.querySelector('.hint.ex');if(e1) e1.style.display='';}
+}
+function renderFail(R,el){
+  const f=R.fail;
+  if(!f||!R.okW){el.style.display='none';el.innerHTML='';return;}
+  const p=w=>pct(Math.min(1,w/(R.doneW||1)));
+  let h=`<h3>${L('PC 실패 큐','Queues with no PC')} (${f.n.toLocaleString()}${L('개','')})${f.n?'<button type="button" class="ib" aria-label="설명">i</button>':''}</h3>`;
+  if(!f.n) h+=`<div class="hint">${L('실패하는 큐가 없습니다. 모든 큐에서 PC가 가능해요.','No failing queue: every queue can PC.')}</div>`;
+  else{
+    h+=`<textarea readonly rows="8" style="width:100%;background:#0c0f1e;border:1px solid var(--line);color:var(--ink);font:12px monospace;padding:6px;box-sizing:border-box">`+f.list.map(([q,w])=>q).join('\n')+`</textarea>`;
+    h+=`<div class="hint ex" style="display:none">${L('PC에 영향을 주는 앞쪽 피스만 표시.','Only the leading pieces that matter are shown.')}${f.cap?L(` 처음 ${f.list.length.toLocaleString()}개만 표시.`,` Only the first ${f.list.length.toLocaleString()} are shown.`):''}</div>`;
+  }
+  el.innerHTML=h;el.style.display='';
+}
+function showSols(R){
+  if(R!==saveR){saveR=R;saveSel=[];}
+  lastR=R;lastKeyShown=boardKey();$('res').style.display='';$('fq2').style.display='none';renderLo(R);renderFail(R,$('fq'));
+  let arr=R.shapes.filter(saveMatch);
+  if(minOnly) arr=arr.filter(s=>s.mn).sort((a,b)=>a.mn-b.mn);
+  else if(R.solOnly) arr.sort((a,b)=>b.sp-a.sp);
+  else arr.sort((a,b)=>b.w-a.w||b.sp-a.sp);   // likelier first, then more spins
+  shapes=arr;
+  $('mn').style.display=R.minN?'':'none';
+  $('mn').textContent=minOnly?L('전체 해법 보기','Show all solutions'):L(`최소 해법 ${R.minN}개만 보기`,`Show minimal ${R.minN} solution(s) only`);
+  $('mnh').textContent=R.minN?(minOnly?L(
+    `성공한 순서의 ${pct(R.minCov/R.minTot)}를 ${R.minN}개로 모두 커버합니다. 앞쪽 해법일수록 더 많은 순서를 담당해요. ${R.minExact?'(엄격한 최소: 이보다 적은 조합은 없음)':'(시간 제한으로 최소 보장 못 함)'}`,
+    `These ${R.minN} solutions together cover ${pct(R.minCov/R.minTot)} of successful orders. Earlier ones cover more. ${R.minExact?'(Strict minimum: no smaller set exists.)':'(Time limit reached: not guaranteed minimal.)'}`
+  ):''):(R.minSkipped?L('순서가 너무 많아 최소 해법 계산은 생략했습니다.','Too many orders — the minimal-solution calculation was skipped.'):'');
+  if(R.see&&R.minN&&minOnly) $('mnh').textContent=L(`이 ${R.minN}개 해법만 쓰는 최선 플레이로도 See 확률 ${pct(R.minCov)}를 그대로 얻습니다. 앞쪽 해법일수록 더 자주 쓰입니다. (해법을 하나씩 빼 보며 줄인 결과라 ${R.see.minLimit?'시간 제한으로 더 줄일 수 있을 수도 있어요':'최소 개수까지는 보장하지 않아요'})`,`Playing best with only these ${R.minN} solutions still gives the See probability ${pct(R.minCov)}. Earlier ones are used more often. (Found by dropping solutions one at a time${R.see.minLimit?'; stopped at the time limit, so it may shrink further':'; not guaranteed to be the smallest'}.)`);
+  {const mx=$('mnx');mx.style.display=(R.minN&&R.minExact===false&&R.grp)?'':'none';const on=mxW&&mxR===R;mx.textContent=on?mxLabel():L('제한 없이 다시 계산','Recalculate without limit');mx.style.borderColor=on?'var(--gold)':'';if(on) $('mnh').textContent=mxDetail();}
+  const box=$('sols');box.innerHTML='';
+  if(!shapes.length){
+    cur=null;stopPlay();$('cap').textContent=L('해당 세이브의 해법이 없습니다.','No solution for this save.');$('cap').style.color='';
+    vw.getContext('2d').clearRect(0,0,vw.width,vw.height);return;
+  }
+  shapes.forEach((s,i)=>{
+    const b=document.createElement('button');b.className='sol';
+    b.innerHTML=(minOnly?`<b>#${s.mn} +${pct(s.mg/R.minTot)}</b> `:(R.solOnly?'':`<b>${pct(s.w/R.doneW)}</b> `))+s.steps.map(p=>`<span class="pc${p.used?' h':''}${p.spin?' s':''}" style="background:${COLORS[p.t]}">${p.t}</span>`).join('');
+    b.onclick=()=>pick(i);box.appendChild(b);
+  });
+  pick(0);
+}
+$('mn').onclick=()=>{minOnly=!minOnly;if(lastR) showSols(lastR);};
+// minimal-solution search ran into its time limit: run it again in its own Worker with no limit (can be cancelled)
+let mxW=null,mxURL=null,mxT0=0,mxTimer=null,mxR=null,mxP=null;
+const mxLabel=()=>L(`계산 중… ${Math.floor((performance.now()-mxT0)/1000)}초 (누르면 취소)`,`Calculating… ${Math.floor((performance.now()-mxT0)/1000)}s (tap to cancel)`);
+function minWorkerURL(){
+  if(mxURL) return mxURL;
+  const src=document.getElementById('app').textContent;
+  const a=src.indexOf('//ENGINE'+'_START'), b=src.indexOf('//ENGINE'+'_END');
+  if(a<0||b<0) throw new Error('engine');
+  const code='"use strict";\nconst L=(ko,en)=>en;\n'+src.slice(a,b)+'\nself.onmessage=e=>{try{const {gl,sps}=e.data;const g=minCoverG(gl,i=>i===null?-1:sps[i],Infinity);let r,last=0;while(!(r=g.next()).done){const t=performance.now();if(t-last>300){last=t;self.postMessage({p:r.value});}}self.postMessage(r.value);}catch(err){self.postMessage({err:String(err&&err.message||err)});}};';
+  return mxURL=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
+}
+const mxDetail=()=>mxP?L(`현재 최선 ${mxP.best}개 · 최소 ${mxP.lb}개 이상 · 탐색 ${mxP.nodes.toLocaleString()}회${mxP.rn?` · 첫 분기 ${mxP.rb}/${mxP.rn}`:''} · 경과 ${((performance.now()-mxT0)/1000).toFixed(1)}초 (최선이 하한과 같아지면 확정)`,`Best so far ${mxP.best} · at least ${mxP.lb} · ${mxP.nodes.toLocaleString()} nodes${mxP.rn?` · top branch ${mxP.rb}/${mxP.rn}`:''} · ${((performance.now()-mxT0)/1000).toFixed(1)}s elapsed (done when best = lower bound)`):L('시작하는 중…','Starting…');
+function stopMx(){if(mxW){try{mxW.terminate();}catch(_){}mxW=null;}clearInterval(mxTimer);mxTimer=null;mxP=null;}
+function applyMx(R,r,exact=true){
+  R.shapes.forEach(x=>{x.mn=0;x.mg=0;});
+  r.picks.forEach((p,i)=>{const x=R.shapes[p.idx];x.mn=i+1;x.mg=p.gain;});
+  R.minN=r.picks.length;R.minTot=r.total;R.minCov=r.covered;R.minExact=exact;
+  if(lastR===R) showSols(R);
+}
+// same computation on the page itself, in small time slices (used when a Worker can't be started)
+function runMxMain(R){
+  let stop=false;const me={terminate(){stop=true;}};mxW=me;mxR=R;
+  const g=minCoverG(R.grp,i=>i===null?-1:R.shapes[i].sp,Infinity);
+  (function tick(){
+    if(stop||mxW!==me) return;
+    const t=performance.now();let r=null;
+    while(performance.now()-t<20){r=g.next();if(r.done) break;if(r.value) mxP={...r.value};}
+    if(r&&r.done){stopMx();applyMx(R,r.value);}else setTimeout(tick,0);
+  })();
+}
+$('mnx').onclick=()=>{
+  if(mxW&&mxR===lastR){
+    // stop: keep the best set found so far (if it beats the current one), not guaranteed minimal
+    const R0=lastR,p=mxP;stopMx();
+    if(p&&p.ids&&p.ids.length<R0.minN) applyMx(R0,coverOrder(R0.grp,i=>i===null?-1:R0.shapes[i].sp,p.ids),false);
+    else showSols(R0);
+    return;
+  }
+  stopMx();
+  const R=lastR;if(!R||!R.grp) return;
+  mxT0=performance.now();
+  mxP=null;mxTimer=setInterval(()=>{if(mxW&&mxR===lastR){$('mnx').textContent=mxLabel();$('mnh').textContent=mxDetail();}},500);
+  let w=null;
+  try{w=new Worker(minWorkerURL());}catch(_){w=null;}
+  if(!w) runMxMain(R);
+  else{
+    mxW=w;mxR=R;
+    const fallback=()=>{if(mxW!==w) return;try{w.terminate();}catch(_){}mxW=null;runMxMain(R);};
+    w.onmessage=e=>{
+      if(mxW!==w) return;
+      const r=e.data;
+      if(r&&r.p){mxP=r.p;return;}
+      if(!r||r.err||!r.picks) return fallback();
+      stopMx();applyMx(R,r);
+    };
+    w.onerror=ev=>{if(ev&&ev.preventDefault) ev.preventDefault();fallback();};
+    w.postMessage({gl:R.grp,sps:R.shapes.map(x=>x.sp)});
+  }
+  showSols(R);
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('button.sv');if(!b||!lastR) return;
+  const t=b.dataset.t,k=b.dataset.k;
+  if(t==='clr') saveSel=[];
+  else{const i=saveSel.findIndex(it=>it.t===t&&it.k===k);if(i>=0) saveSel.splice(i,1);else saveSel.push({t,k});}
+  minOnly=false;showSols(lastR);
+});
+let curPic=null;
+function pick(i){
+  curPic=shapes[i].pic;cur=shapes[i].steps;curQ=shapes[i].q;step=0;stopPlay();
+  [...$('sols').children].forEach((b,j)=>b.classList.toggle('on',i===j));
+  draw();
+}
+function draw(){
+  size(vw);const c=vw.getContext('2d');grid(c);
+  if(step>=cur.length){
+    // last frame: show where every piece ended up (the finished solution on the starting board)
+    if(lastRows0) for(let y=0;y<H;y++) for(let x=0;x<COLS;x++) if((lastRows0[BUF+y]>>x)&1) cell(c,x,y,COLORS.G);
+    if(curPic) curPic.forEach(q=>q.cells.forEach(([x,y])=>cell(c,x,y,COLORS[q.t])));
+    $('cap').textContent=L('PERFECT CLEAR! (최종 배치)','PERFECT CLEAR! (final layout)');$('cap').style.color='var(--mint)';return;
+  }
+  const s=cur[step];
+  s.before.slice(BUF).forEach((v,y)=>{for(let x=0;x<COLS;x++)if((v>>x)&1)cell(c,x,y,COLORS.G);});
+  s.ghost.forEach(g=>g.cs.forEach(([x,y])=>cell(c,x,y-BUF,COLORS[g.t],.3)));
+  s.cs.forEach(([x,y])=>cell(c,x,y-BUF,COLORS[s.t]));
+  $('cap').style.color='';
+  $('cap').textContent=`${step+1}/${cur.length}  ${s.t}${s.used?L(' (홀드 사용)',' (used hold)'):''}${s.spin?L(' (스핀·틱)',' (spin/tuck)'):''}`+(multi?L('  · 큐 ','  · queue ')+curQ:'');
+}
+$('nx').onclick=()=>{stopPlay();if(cur&&step<cur.length){step++;draw();}};
+$('pv').onclick=()=>{stopPlay();if(cur&&step>0){step--;draw();}};
+function stopPlay(){clearInterval(timer);timer=null;$('pl').textContent=L('재생','Play');}
+$('pl').onclick=()=>{
+  if(timer) return stopPlay();
+  if(!cur) return;
+  if(step>=cur.length) step=0;
+  draw();$('pl').textContent=L('정지','Pause');
+  timer=setInterval(()=>{ if(step<cur.length){step++;draw();} else stopPlay(); },700);
+};
+$('fm').onclick=()=>{
+  if(!shapes.length||!lastR||!lastRows0) return;
+  const code=fumenFromShapes(shapes,s=>lastR.solOnly?'':minOnly?pct(s.mg/lastR.minTot):pct(s.w/lastR.doneW),lastRows0,H,BUF);
+  const box=$('fmbox');box.value=code;box.style.display='';box.select();
+  const done=()=>{$('fm').textContent=L('복사됨','Copied');setTimeout(()=>{$('fm').textContent=L('후멘 복사','Copy fumen');},1500);};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done,()=>{});
+  else{try{document.execCommand('copy');done();}catch(_){}}
+};
+$('fmload').onclick=()=>{
+  if(running) return;
+  let f;try{f=fumenFirstField($('fmin').value);}catch(_){f=null;}
+  if(!f) return st(L('후멘 코드(v115@…)를 읽지 못했습니다.','Could not read that fumen code (v115@…).'),'bad');
+  let top=-1;for(let r=0;r<23&&top<0;r++) for(let x=0;x<10;x++) if(f[r*10+x]) {top=r;break;}
+  if(top<0) return st(L('첫 페이지가 비어 있습니다.','The first page is empty.'),'bad');
+  const h=23-top;
+  if(h>12) return st(L(`쌓인 높이가 ${h}줄이라 12줄을 넘어 가져올 수 없습니다.`,`The stack is ${h} rows high; the maximum is 12.`),'bad');
+  setH(Math.max(2,h));resetBoard();
+  for(let y=0;y<H;y++){const r=23-H+y;for(let x=0;x<10;x++) if(f[r*10+x]) board[y][x]=1;}
+  drawEd();restoreSaved();
+  if($('res').style.display==='none') st(L(`후멘 첫 페이지를 가져왔습니다. (높이 ${H}줄)`,`Imported the first fumen page. (${H} rows)`),'ok');
+};
+let LANG='ko';
+const STATIC={
+  subp:['Tetrion의 SRS 회전·킥 규칙(180° 포함)으로 퍼펙트 클리어를 찾습니다.','Finds perfect clears using Tetrion’s SRS rotation/kick rules (incl. 180°).'],
+  h2board:['보드','Board'],
+  hint6:['퍼클 탐색은 아래쪽 8줄까지만 지원합니다. 9줄 이상 쌓인 보드는 8줄 안에서 끝나는 해만 찾아요.','PC search only covers the bottom 8 rows. On a taller board, only solutions that finish within 8 rows are found.'],
+  hintDrag:['칸을 누르거나 드래그해서 블록을 채우고 지웁니다. 맨 아래가 바닥입니다.','Tap or drag cells to fill/clear blocks. The bottom row is the floor.'],
+  lblHeight:['높이','Height'],
+  clr:['비우기','Clear'],
+  h2piece:['피스','Pieces'],
+  lblNext:['넥스트','Next'],
+  rnd:['랜덤 2백','Random bag×2'],
+  hintBracket:['[ ] 묶음 · 안은 띄어 써도 됨 · 중첩 가능<br>숫자 = 뽑을 개수(생략 시 1개, 쓴 순서 유지)<br>! = 섞기(개수 생략 시 전부)<br><br>[TIL] T·I·L 중 1개<br>[TIL]2 TI·TL·IL 중 하나<br>[TIL]! 3개 전부 섞어서<br>[TIL]2! 2개를 섞어서<br><br>[]! = [IOTSZJL]! → 기본으로 7-bag 지정<br>% = bag 여부 뒤집기 (일반 묶음에 붙이면 bag 지정, []에 붙이면 해제)<br>※ 세이브는 bag으로 지정된 묶음 기준으로 계산돼요 (해제하면 계산 안 함)<br><br>예: [TIL]!JSZ<br>예: [[SZ]! [LJ]!]2!',
+    '[ ] group · spaces ok inside · nestable<br>number = how many to pick (default 1, written order kept)<br>! = shuffle (all if no number)<br><br>[TIL] 1 of T·I·L<br>[TIL]2 one of TI·TL·IL<br>[TIL]! all 3, shuffled<br>[TIL]2! 2, shuffled<br><br>[]! = [IOTSZJL]! → 7-bag by default<br>% = toggle bag mode (on a plain group: make it a bag · on []: release it)<br>※ Saves are calculated from the groups set as a bag (none if released)<br><br>e.g. [TIL]!JSZ<br>e.g. [[SZ]! [LJ]!]2!'],
+  lblUseHold:['홀드 사용','Use hold'],
+  lblRot180:['180° 회전','180° rotation'],
+  lblSpin:['스핀·틱 포함','Include spins/tucks'],
+  lblPar:['병렬 처리','Parallel'],lblProbOnly:['확률만 (빠름)','Probability only (fast)'],lblSolOnly:['해법만 (빠름)','Solutions only (fast)'],
+  fm:['후멘 복사','Copy fumen'],
+  hintSee:['',''],
+  fmload:['가져오기','Import'],
+  go:['퍼펙트 클리어 찾기','Find perfect clear'],
+  h2result:['결과','Result']
+};
+const L=(ko,en)=>LANG==='en'?en:ko;
+function applyLang(){
+  $('lang').textContent=LANG==='en'?'한국어':'EN';
+  for(const id in STATIC){const el=$(id);if(el) el[id==='hintBracket'?'innerHTML':'textContent']=STATIC[id][LANG==='en'?1:0];}
+  $('hm').setAttribute('aria-label',L('높이 줄이기','Decrease height'));
+  $('fmin').setAttribute('placeholder',L('후멘 코드 붙여넣기 (v115@…)','Paste a fumen code (v115@…)'));
+  $('hp').setAttribute('aria-label',L('높이 늘리기','Increase height'));
+  for(const [id,ko,en] of [['hintBracket','입력 문법 설명','About the input syntax']]){const b=document.querySelector('button.ib[data-t="'+id+'"]');if(b) b.setAttribute('aria-label',L(ko,en));}
+  $('hint6').style.display=H>MAXL?'':'none';
+  if(!running) $('stop').textContent=L('중지','Stop');
+  $('pl').textContent=timer?L('정지','Pause'):L('재생','Play');
+  if(lastR) showSols(lastR);
+}
+$('lang').onclick=()=>{LANG=LANG==='en'?'ko':'en';applyLang();};
+applyLang();
+resetBoard();
+window.__test={search,placementIds,snapshot};
+})();
+</script>
+</body>
+</html>
