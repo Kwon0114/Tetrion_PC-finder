@@ -1,0 +1,10 @@
+{
+  "name": "Tetrion PC Finder",
+  "short_name": "PC Finder",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05060d",
+  "theme_color": "#05060d",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}
