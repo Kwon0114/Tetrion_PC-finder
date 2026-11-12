@@ -194,6 +194,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)) window.add
 "use strict";
 let LANG='ko';
 const L=(ko,en)=>LANG==='en'?en:ko;
+//ENGINE_START
 const COLS=10, BUF=4, CELL=26, MAXL=8;
 const COLORS = {
 I: '#68d7cd', O: '#f6d975', T: '#c995fc', S: '#8ddd9f',
@@ -1984,6 +1985,7 @@ const q=[];ps.forEach((p,i)=>{q.push(...p[idx[i]].q);w*=p[idx[i]].w;});
 return {q,w};
 }};
 }
+//ENGINE_START
 const $=id=>document.getElementById(id);
 const JSTRIS_KICKS_OFF=[2,3,4,5,6];
 const tioMode=()=>$('kmode').value==='tio';
