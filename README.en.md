@@ -5,9 +5,7 @@
 A browser tool that finds Tetris **perfect clears (PC)** and calculates their **probability** exactly.
 It runs from a single HTML file with no server and no installation. It works on both phone and PC browsers, and the interface is available in Korean and English (`EN` at the top right).
 
-> **Note**
-> The queue input syntax and the search algorithm were considerably influenced by existing **PC solvers**.
-
+Since this is a web app, it's extremely light
 ---
 
 ## Contents
